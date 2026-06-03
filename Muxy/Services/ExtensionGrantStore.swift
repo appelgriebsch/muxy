@@ -6,6 +6,7 @@ private let logger = Logger(subsystem: "app.muxy", category: "ExtensionGrantStor
 enum ExtensionGrantDecision: String, Codable, Equatable {
     case allow
     case deny
+    case blocked
 }
 
 enum ExtensionGatedVerb: String, Codable, CaseIterable {
@@ -17,6 +18,19 @@ enum ExtensionGatedVerb: String, Codable, CaseIterable {
     case remoteInvoke = "remote.invoke"
     case gitWrite = "git.write"
     case filesWrite = "files.write"
+
+    var kindDisplayName: String {
+        switch self {
+        case .exec: "shell commands"
+        case .panesSend: "terminal input"
+        case .panesSendKeys: "terminal keystrokes"
+        case .panesReadScreen: "terminal output reads"
+        case .tabsOpenForeign: "foreign tab opens"
+        case .remoteInvoke: "mobile requests"
+        case .gitWrite: "git changes"
+        case .filesWrite: "file changes"
+        }
+    }
 }
 
 enum ExtensionGrantMatch: Codable, Equatable {
@@ -248,7 +262,7 @@ final class ExtensionGrantStore {
                 return lhs.match.specificity > rhs.match.specificity
             }
             if lhs.decision != rhs.decision {
-                return lhs.decision == .deny
+                return rhs.decision == .allow
             }
             return lhs.createdAt < rhs.createdAt
         }
@@ -275,6 +289,15 @@ final class ExtensionGrantStore {
     func removeAll(for extensionID: String) {
         rules.removeAll { $0.extensionID == extensionID }
         save()
+    }
+
+    @discardableResult
+    func blockKind(extensionID: String, verb: ExtensionGatedVerb) -> UUID {
+        rules.removeAll { $0.extensionID == extensionID && $0.verb == verb }
+        let rule = ExtensionGrantRule(extensionID: extensionID, verb: verb, match: .any, decision: .blocked)
+        rules.append(rule)
+        save()
+        return rule.id
     }
 
     private func load() {
