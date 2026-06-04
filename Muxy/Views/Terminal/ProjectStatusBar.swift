@@ -4,7 +4,6 @@ import SwiftUI
 struct ProjectStatusBar: View {
     struct StatusContext: Equatable {
         let path: String
-        let worktreeName: String?
     }
 
     let activePane: TerminalPaneState?
@@ -48,10 +47,6 @@ struct ProjectStatusBar: View {
             if let statusContext {
                 pathButton(statusContext.path)
                 separator
-                if let worktreeName = statusContext.worktreeName {
-                    worktreeLabel(worktreeName)
-                    separator
-                }
             }
             ForEach(extensionStore.statusBarItems(side: .left)) { binding in
                 extensionItem(binding: binding)
@@ -101,10 +96,7 @@ struct ProjectStatusBar: View {
             ?? activeWorktree?.path
             ?? fallbackProjectPath
         else { return nil }
-        return StatusContext(
-            path: path,
-            worktreeName: activeWorktree?.name
-        )
+        return StatusContext(path: path)
     }
 
     private func pathButton(_ fullPath: String) -> some View {
@@ -129,19 +121,6 @@ struct ProjectStatusBar: View {
             Button("Copy Path") { copyToPasteboard(fullPath) }
             Button("Reveal in Finder") { revealInFinder(fullPath) }
         }
-    }
-
-    private func worktreeLabel(_ worktreeName: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: "square.stack.3d.up")
-                .font(.system(size: 10, weight: .semibold))
-            Text(worktreeName)
-                .font(.system(size: 11, weight: .medium))
-                .lineLimit(1)
-                .truncationMode(.tail)
-        }
-        .foregroundStyle(MuxyTheme.fgMuted)
-        .help("Worktree: \(worktreeName)")
     }
 
     private var separator: some View {
