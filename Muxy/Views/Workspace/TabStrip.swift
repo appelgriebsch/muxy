@@ -381,23 +381,21 @@ private struct TabCell: View {
         return progressStore.isCompletionPending(for: paneID)
     }
 
-    private var showBadge: Bool {
+    private var shortcutHint: KeyCombo? {
         guard let shortcutIndex,
               let action = ShortcutAction.tabAction(for: shortcutIndex)
-        else { return false }
-        return ModifierKeyMonitor.shared.isHolding(
-            modifiers: KeyBindingStore.shared.combo(for: action).modifiers
-        )
+        else { return nil }
+        return ModifierKeyMonitor.shared.hint(for: action)
     }
 
     var body: some View {
         HStack(spacing: 0) {
             HStack(spacing: UIMetrics.spacing3) {
-                tabIconView
+                tabIconOrBadge
                     .foregroundStyle(active ? MuxyTheme.fg : MuxyTheme.fgMuted)
                     .opacity(titleHidden && hovered && !tab.isPinned ? 0 : 1)
                     .overlay(alignment: .topTrailing) {
-                        if hasUnread || hasCompletionPending, !active {
+                        if hasUnread || hasCompletionPending, !active, shortcutHint == nil {
                             Circle()
                                 .fill(MuxyTheme.accent)
                                 .frame(width: UIMetrics.scaled(6), height: UIMetrics.scaled(6))
@@ -437,13 +435,6 @@ private struct TabCell: View {
             .overlay(alignment: titleHidden ? .center : .trailing) {
                 trailingAccessory
                     .padding(.trailing, titleHidden ? 0 : UIMetrics.spacing5)
-            }
-            .overlay {
-                if showBadge, let shortcutIndex,
-                   let action = ShortcutAction.tabAction(for: shortcutIndex)
-                {
-                    ShortcutBadge(label: KeyBindingStore.shared.combo(for: action).displayString)
-                }
             }
             .overlay(alignment: .bottom) {
                 if let accentColor = bottomAccentColor {
@@ -622,6 +613,17 @@ private struct TabCell: View {
         if tab.isOffline, !active { label += ", Idle" }
         if hasUnread { label += ", Unread" }
         return label
+    }
+
+    @ViewBuilder
+    private var tabIconOrBadge: some View {
+        if let shortcutIndex, let hint = shortcutHint {
+            ShortcutIconBadge(number: shortcutIndex, size: UIMetrics.iconMD, combo: hint)
+                .frame(width: UIMetrics.iconMD, height: UIMetrics.iconMD)
+        } else {
+            tabIconView
+                .frame(width: UIMetrics.iconMD, height: UIMetrics.iconMD)
+        }
     }
 
     @ViewBuilder

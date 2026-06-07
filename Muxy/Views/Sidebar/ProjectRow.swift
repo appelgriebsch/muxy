@@ -47,7 +47,7 @@ struct ProjectRow: View {
     }
 
     var body: some View {
-        projectIcon
+        iconOrBadge
             .help(project.name)
             .contentShape(RoundedRectangle(cornerRadius: UIMetrics.radiusLG))
             .accessibilityElement(children: .combine)
@@ -150,13 +150,6 @@ struct ProjectRow: View {
                     onCancel: { logoCropImage = nil }
                 )
             }
-            .overlay {
-                if showShortcutBadge, let shortcutIndex,
-                   let action = ShortcutAction.projectAction(for: shortcutIndex)
-                {
-                    ShortcutBadge(label: KeyBindingStore.shared.combo(for: action).displayString)
-                }
-            }
             .popover(isPresented: $isRenaming, arrowEdge: .trailing) {
                 RenamePopover(
                     text: $renameText,
@@ -181,6 +174,16 @@ struct ProjectRow: View {
     private var resolvedLogo: NSImage? {
         guard let filename = project.logo else { return nil }
         return NSImage(contentsOfFile: ProjectLogoStorage.logoPath(for: filename))
+    }
+
+    @ViewBuilder
+    private var iconOrBadge: some View {
+        if let shortcutIndex, let hint = shortcutHint {
+            ShortcutIconBadge(number: shortcutIndex, size: UIMetrics.iconXXL, combo: hint)
+                .padding(UIMetrics.scaled(3))
+        } else {
+            projectIcon
+        }
     }
 
     private var projectIcon: some View {
@@ -250,13 +253,11 @@ struct ProjectRow: View {
         return isActive ? MuxyTheme.fg : MuxyTheme.fgMuted
     }
 
-    private var showShortcutBadge: Bool {
+    private var shortcutHint: KeyCombo? {
         guard let shortcutIndex,
               let action = ShortcutAction.projectAction(for: shortcutIndex)
-        else { return false }
-        return ModifierKeyMonitor.shared.isHolding(
-            modifiers: KeyBindingStore.shared.combo(for: action).modifiers
-        )
+        else { return nil }
+        return ModifierKeyMonitor.shared.hint(for: action)
     }
 
     private func pickLogoImage() {

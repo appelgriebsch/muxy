@@ -173,7 +173,7 @@ struct ExpandedProjectRow: View {
 
     private var projectHeader: some View {
         HStack(spacing: UIMetrics.spacing4) {
-            projectIcon
+            iconOrBadge
 
             VStack(alignment: .leading, spacing: UIMetrics.scaled(1)) {
                 Text(project.name)
@@ -219,13 +219,6 @@ struct ExpandedProjectRow: View {
                 onSelect()
             }
         }
-        .overlay {
-            if showShortcutBadge, let shortcutIndex,
-               let action = ShortcutAction.projectAction(for: shortcutIndex)
-            {
-                ShortcutBadge(label: KeyBindingStore.shared.combo(for: action).displayString)
-            }
-        }
     }
 
     private var worktreeChevron: some View {
@@ -257,6 +250,15 @@ struct ExpandedProjectRow: View {
         } else {
             Color.clear
                 .frame(width: UIMetrics.scaled(18), height: UIMetrics.scaled(18))
+        }
+    }
+
+    @ViewBuilder
+    private var iconOrBadge: some View {
+        if let shortcutIndex, let hint = shortcutHint {
+            ShortcutIconBadge(number: shortcutIndex, size: UIMetrics.iconXXL, combo: hint)
+        } else {
+            projectIcon
         }
     }
 
@@ -365,13 +367,11 @@ struct ExpandedProjectRow: View {
         return AnyShapeStyle(Color.clear)
     }
 
-    private var showShortcutBadge: Bool {
+    private var shortcutHint: KeyCombo? {
         guard let shortcutIndex,
               let action = ShortcutAction.projectAction(for: shortcutIndex)
-        else { return false }
-        return ModifierKeyMonitor.shared.isHolding(
-            modifiers: KeyBindingStore.shared.combo(for: action).modifiers
-        )
+        else { return nil }
+        return ModifierKeyMonitor.shared.hint(for: action)
     }
 
     private func pickLogoImage() {
