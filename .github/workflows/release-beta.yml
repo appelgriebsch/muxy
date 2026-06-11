@@ -247,18 +247,21 @@ jobs:
               artifacts/dmg-arm64/*.dmg \
               artifacts/dmg-x86_64/*.dmg
           else
+            chmod +x scripts/clean-changelog.sh
             PREVIOUS_BETA=$(gh release list --repo "${{ github.repository }}" --limit 100 \
               --json tagName,isPrerelease \
               --jq '[.[] | select(.isPrerelease and (.tagName | contains("-beta.")))][0].tagName' || echo "")
-            NOTES_ARGS=(--generate-notes)
+            NOTES_API_ARGS=(--method POST "/repos/${{ github.repository }}/releases/generate-notes"
+              -f "tag_name=$TAG" -f "target_commitish=$(git rev-parse HEAD)")
             if [[ -n "$PREVIOUS_BETA" && "$PREVIOUS_BETA" != "$TAG" ]]; then
-              NOTES_ARGS+=(--notes-start-tag "$PREVIOUS_BETA")
+              NOTES_API_ARGS+=(-f "previous_tag_name=$PREVIOUS_BETA")
             fi
+            NOTES=$(gh api "${NOTES_API_ARGS[@]}" --jq .body | scripts/clean-changelog.sh)
             gh release create "$TAG" \
               --repo "${{ github.repository }}" \
               --title "Muxy ${{ needs.validate.outputs.version }}" \
               --prerelease \
-              "${NOTES_ARGS[@]}" \
+              --notes "$NOTES" \
               artifacts/dmg-arm64/*.dmg \
               artifacts/dmg-x86_64/*.dmg
           fi
@@ -294,8 +297,7 @@ jobs:
             echo "DISCORD_WEBHOOK_URL not set, skipping Discord notification"
             exit 0
           fi
-          NOTES=$(gh release view "$TAG" --repo "$REPO" --json body --jq .body \
-            | sed -E 's# by @[A-Za-z0-9_-]+ in https://github\.com/[^ ]+/pull/[0-9]+##g')
+          NOTES=$(gh release view "$TAG" --repo "$REPO" --json body --jq .body)
           if [[ ${#NOTES} -gt 3800 ]]; then
             NOTES="${NOTES:0:3800}…"
           fi

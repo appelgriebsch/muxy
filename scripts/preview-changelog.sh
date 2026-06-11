@@ -125,24 +125,9 @@ print_header() {
   printf "\n"
 }
 
-strip_noise() {
-  awk '
-    /^## New Contributors[[:space:]]*$/ { in_contrib = 1; next }
-    in_contrib {
-      if (/^## / || /^\*\*Full Changelog\*\*/) { in_contrib = 0 }
-      else { next }
-    }
-    /^[*-] / {
-      sub(/[[:space:]]+by[[:space:]]+@[A-Za-z0-9_-]+[[:space:]]+in[[:space:]]+https?:\/\/[^[:space:]]+[[:space:]]*$/, "")
-      sub(/[[:space:]]+\(#[0-9]+\)[[:space:]]*$/, "")
-    }
-    { print }
-  '
-}
-
 style_notes() {
   local notes
-  notes="$(printf "%s\n" "$1" | strip_noise)"
+  notes="$(printf "%s\n" "$1" | "$SCRIPT_DIR/clean-changelog.sh")"
   if [[ "$RAW" -eq 1 ]]; then
     printf "%s\n" "$notes"
     return
@@ -152,11 +137,6 @@ style_notes() {
     /^## / {
       sub(/^## /, "")
       printf "%s%s%s%s\n\n", B, C, $0, R
-      next
-    }
-    /^\*\*Full Changelog\*\*/ {
-      gsub(/\*\*/, "")
-      printf "\n%s%s%s\n", D, $0, R
       next
     }
     /^[*-] / {

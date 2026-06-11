@@ -252,9 +252,17 @@ jobs:
           TAG: v${{ needs.validate.outputs.version }}
           DRAFT: ${{ inputs.draft }}
         run: |
+          chmod +x scripts/clean-changelog.sh
+          NOTES=$(gh api \
+            --method POST "/repos/${{ github.repository }}/releases/generate-notes" \
+            -f "tag_name=$TAG" \
+            -f "target_commitish=${{ inputs.from_beta_tag }}" \
+            --jq .body \
+            | scripts/clean-changelog.sh)
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             gh release edit "$TAG" \
               --repo "${{ github.repository }}" \
+              --notes "$NOTES" \
               --draft="$DRAFT"
             gh release upload "$TAG" \
               --repo "${{ github.repository }}" \
@@ -268,7 +276,7 @@ jobs:
             gh release create "$TAG" \
               --repo "${{ github.repository }}" \
               --title "Muxy $TAG" \
-              --generate-notes \
+              --notes "$NOTES" \
               --draft="$DRAFT" \
               artifacts/dmg-arm64/*.dmg \
               artifacts/dmg-x86_64/*.dmg \
@@ -309,8 +317,7 @@ jobs:
             exit 0
           fi
           TAG="v${VERSION}"
-          NOTES=$(gh release view "$TAG" --repo "$REPO" --json body --jq .body \
-            | sed -E 's# by @[A-Za-z0-9_-]+ in https://github\.com/[^ ]+/pull/[0-9]+##g')
+          NOTES=$(gh release view "$TAG" --repo "$REPO" --json body --jq .body)
           if [[ ${#NOTES} -gt 3800 ]]; then
             NOTES="${NOTES:0:3800}…"
           fi
