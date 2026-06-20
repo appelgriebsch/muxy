@@ -669,7 +669,8 @@ struct MainWindow: View {
             let remoteHome = showHomeProject ? projectGroupStore.activeRemoteHomeProject.map { [$0] } ?? [] : []
             return remoteHome + projectGroupStore.displayProjects(localProjects: projectStore.storedProjects)
         }
-        return showHomeProject ? projectStore.projects : projectStore.storedProjects
+        let sorted = ProjectSortMode.current.sorted(projectStore.storedProjects)
+        return showHomeProject ? [Project.home] + sorted : sorted
     }
 
     private var terminalOmniboxProjects: [TerminalOmniboxProjectItem] {
