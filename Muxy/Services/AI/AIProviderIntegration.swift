@@ -78,6 +78,7 @@ final class AIProviderRegistry {
     private let openCodeProvider = OpenCodeProvider()
     private let codexProvider = CodexProvider()
     private let cursorProvider = CursorProvider()
+    private let copilotProvider = CopilotProvider()
     private let droidProvider = DroidProvider()
     private let piProvider = PiProvider()
     private let grokProvider = GrokProvider()
@@ -96,6 +97,7 @@ final class AIProviderRegistry {
         openCodeProvider,
         codexProvider,
         cursorProvider,
+        copilotProvider,
         droidProvider,
         piProvider,
         grokProvider,

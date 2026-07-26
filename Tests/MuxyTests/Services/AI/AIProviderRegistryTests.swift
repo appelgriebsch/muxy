@@ -26,6 +26,7 @@ struct AIProviderRegistryTests {
         let expected: [String: String] = [
             "claude_hook": "claude",
             "cursor_hook": "cursor",
+            "copilot_hook": "copilot",
             "codex_hook": "codex",
             "droid_hook": "droid",
             "opencode": "opencode",
@@ -66,6 +67,7 @@ struct AIProviderRegistryTests {
             "opencode",
             "codex",
             "cursor",
+            "copilot",
             "droid",
             "pi",
             "grok",

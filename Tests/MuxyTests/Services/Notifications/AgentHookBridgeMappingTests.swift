@@ -143,6 +143,8 @@ struct AgentHookBridgeMappingTests {
             "UserPromptSubmit",
             "PreToolUse",
             "beforeSubmitPrompt",
+            "userPromptSubmitted",
+            "preToolUse",
         ]
     )
     func mapsWorkingAliases(event: String) {
@@ -151,7 +153,7 @@ struct AgentHookBridgeMappingTests {
 
     @Test("permission request aliases map to a waiting notification")
     func mapsPermissionRequests() {
-        for event in ["permission-request", "PermissionRequest"] {
+        for event in ["permission-request", "PermissionRequest", "permissionRequest"] {
             #expect(map(event: event) == MappedAgentHookEvent(
                 phase: .waiting,
                 title: "Claude Code",
@@ -164,10 +166,12 @@ struct AgentHookBridgeMappingTests {
         "notification types map to stable phases and fallbacks",
         arguments: [
             ("task_complete", AgentHookPhase.finished, "Task completed"),
+            ("agent_completed", AgentHookPhase.finished, "Task completed"),
             ("agent_error", AgentHookPhase.finished, "Agent error"),
             ("permission_prompt", AgentHookPhase.waiting, "Permission needed"),
             ("elicitation_dialog", AgentHookPhase.waiting, "Question waiting"),
             ("idle_prompt", AgentHookPhase.waiting, "Idle prompt"),
+            ("agent_idle", AgentHookPhase.waiting, "Idle prompt"),
             ("unknown", AgentHookPhase.waiting, "Needs attention"),
         ]
     )
@@ -206,7 +210,13 @@ struct AgentHookBridgeMappingTests {
 
     @Test(
         "settled notification types do not emit lifecycle events",
-        arguments: ["auth_success", "elicitation_complete", "elicitation_response"]
+        arguments: [
+            "auth_success",
+            "elicitation_complete",
+            "elicitation_response",
+            "shell_completed",
+            "shell_detached_completed",
+        ]
     )
     func ignoresSettledNotifications(type: String) {
         #expect(map(event: "notification", input: data(["notification_type": type])) == nil)
@@ -228,7 +238,9 @@ struct AgentHookBridgeMappingTests {
             body: "Implemented"
         ))
         #expect(map(event: "stop", input: Data("invalid".utf8))?.body == "Session completed")
+        #expect(map(event: "agentStop")?.body == "Session completed")
         #expect(map(event: "stop-failure")?.body == "Session failed")
+        #expect(map(event: "errorOccurred")?.body == "Session failed")
         #expect(map(event: "StopFailure", input: data(["title": "Failed safely"]))?.body == "Failed safely")
     }
 

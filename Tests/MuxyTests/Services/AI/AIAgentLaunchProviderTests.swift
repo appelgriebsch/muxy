@@ -25,6 +25,7 @@ struct AIAgentLaunchProviderTests {
             (OpenCodeProvider(), ["run", "--pure", prompt]),
             (CodexProvider(), ["exec", "--ephemeral", "--sandbox", "read-only", "--color", "never", prompt]),
             (CursorProvider(), ["--print", "--output-format", "text", prompt]),
+            (CopilotProvider(), ["-p", prompt]),
             (DroidProvider(), ["exec", "--output-format", "text", prompt]),
             (PiProvider(), ["--print", "--no-session", "--no-tools", prompt]),
             (

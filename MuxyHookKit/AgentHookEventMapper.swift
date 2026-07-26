@@ -22,10 +22,13 @@ public enum AgentHookEventMapper {
              "pre-tool-use",
              "UserPromptSubmit",
              "PreToolUse",
-             "beforeSubmitPrompt":
+             "beforeSubmitPrompt",
+             "userPromptSubmitted",
+             "preToolUse":
             return MappedAgentHookEvent(phase: .working, title: "", body: "")
         case "permission-request",
-             "PermissionRequest":
+             "PermissionRequest",
+             "permissionRequest":
             return MappedAgentHookEvent(
                 phase: .waiting,
                 title: sanitize(providerTitle),
@@ -35,7 +38,8 @@ public enum AgentHookEventMapper {
              "Notification":
             return mapNotification(providerTitle: providerTitle, payload: payload)
         case "stop",
-             "Stop":
+             "Stop",
+             "agentStop":
             return MappedAgentHookEvent(
                 phase: .finished,
                 title: sanitize(providerTitle),
@@ -43,7 +47,8 @@ public enum AgentHookEventMapper {
                     ?? "Session completed"
             )
         case "stop-failure",
-             "StopFailure":
+             "StopFailure",
+             "errorOccurred":
             return MappedAgentHookEvent(
                 phase: .finished,
                 title: sanitize(providerTitle),
@@ -82,9 +87,12 @@ public enum AgentHookEventMapper {
         switch type {
         case "auth_success",
              "elicitation_complete",
-             "elicitation_response":
+             "elicitation_response",
+             "shell_completed",
+             "shell_detached_completed":
             return nil
-        case "task_complete":
+        case "task_complete",
+             "agent_completed":
             return MappedAgentHookEvent(
                 phase: .finished,
                 title: title,
@@ -108,7 +116,8 @@ public enum AgentHookEventMapper {
                 title: title,
                 body: notificationBody(in: payload, fallback: "Question waiting")
             )
-        case "idle_prompt":
+        case "idle_prompt",
+             "agent_idle":
             return MappedAgentHookEvent(
                 phase: .waiting,
                 title: title,
