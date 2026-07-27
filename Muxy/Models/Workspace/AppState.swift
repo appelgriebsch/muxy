@@ -834,6 +834,7 @@ final class AppState {
 
         let currentWorkspaceRootSignature = workspaceRootSignature(workspaceRoots)
         let currentTopLevelTabLayoutSignature = topLevelTabLayoutSignature(topLevelTabLayouts)
+        let previousActiveProjectID = activeProjectID
         var workspace = WorkspaceState(
             activeProjectID: activeProjectID,
             activeWorktreeID: activeWorktreeID,
@@ -845,8 +846,12 @@ final class AppState {
             keepProjectOpenWhenEmpty: ProjectLifecyclePreferences.keepOpenWhenNoTabs
         )
         let effects = WorkspaceReducer.reduce(action: action, state: &workspace)
-        if activeProjectID != workspace.activeProjectID {
+        if previousActiveProjectID != workspace.activeProjectID {
             activeProjectID = workspace.activeProjectID
+            ExtensionPanelRegistry.shared.activateProject(
+                workspace.activeProjectID,
+                from: previousActiveProjectID
+            )
         }
         if activeWorktreeID != workspace.activeWorktreeID {
             activeWorktreeID = workspace.activeWorktreeID
@@ -875,7 +880,13 @@ final class AppState {
             DetectedAgentStore.shared.resetPane(paneID)
         }
 
+        if case let .removeProject(projectID) = action {
+            ExtensionPanelRegistry.shared.purgeProject(projectID)
+        }
         if !effects.projectIDsToRemove.isEmpty {
+            for projectID in effects.projectIDsToRemove {
+                ExtensionPanelRegistry.shared.purgeProject(projectID)
+            }
             onProjectsEmptied?(effects.projectIDsToRemove)
         }
 

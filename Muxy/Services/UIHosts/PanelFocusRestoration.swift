@@ -67,6 +67,11 @@ final class PanelFocusRestoration {
         window.makeFirstResponder(responder)
     }
 
+    func discard(panelID: String) {
+        guard let snapshot = snapshots.removeValue(forKey: panelID) else { return }
+        rebaseSnapshots(dependingOn: panelID, closedSnapshot: snapshot)
+    }
+
     private func rebaseSnapshots(
         dependingOn closedPanelID: String,
         closedSnapshot: Snapshot

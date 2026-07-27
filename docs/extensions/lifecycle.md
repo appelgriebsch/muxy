@@ -51,6 +51,7 @@ This closes **this** surface and **bypasses** the veto — it will not ask `onBe
 
 - **Quitting the app and closing a window skip the veto** (the app's own quit confirmation governs there) — they only emit the observation events. Don't rely on `onBeforeClose` to guard against quit; persist on a timer or on `tab.focused`/blur instead.
 - **Toggling a panel or popover closed is a show/hide, not a close** — it bypasses the veto. `onBeforeClose` fires for genuine close intents: the surface's close button, the programmatic `muxy.panels.close()` / `muxy.popover.close()` / `muxy.panes.close()`, and closing a tab. A topbar/command toggle that hides the surface does not ask, and `muxy.lifecycle.close()` deliberately bypasses it.
+- **Switching projects force-closes extension panels** for the project you leave (no veto) and recreates that project's saved set when you return. Observation events still fire (`panel.closed` / `panel.opened`). See [Panels — Per-project session](panels.md#per-project-session).
 - **A popover dismissed by clicking outside it cannot be vetoed** — macOS has already torn it down. You still get `popover.closed`.
 
 ## Observing closes

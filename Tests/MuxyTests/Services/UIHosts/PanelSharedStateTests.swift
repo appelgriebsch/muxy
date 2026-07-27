@@ -241,11 +241,140 @@ struct PanelSharedStateTests {
             #expect(PanelHost.shared.isOpen(replacementState.hostPanelID))
         }
 
+        @Test("project activation restores each project's open panels")
+        func projectActivationRestoresPanels() {
+            let registry = ExtensionPanelRegistry.shared
+            let projectA = UUID()
+            let projectB = UUID()
+            let filesExtension = "files-\(UUID().uuidString)"
+            let gitExtension = "git-\(UUID().uuidString)"
+            defer {
+                registry.closeAll(extensionID: filesExtension)
+                registry.closeAll(extensionID: gitExtension)
+                registry.activateProject(nil, from: registry.activeProjectID)
+            }
+
+            registry.activateProject(projectA, from: nil)
+            registry.open(
+                extensionID: filesExtension,
+                panel: panel(id: "browser", mode: .pinned),
+                data: .object(["path": .string("/a")])
+            )
+            registry.move(.bottom, forHostPanelID: ExtensionPanelState.hostPanelID(
+                extensionID: filesExtension,
+                panelID: "browser"
+            ))
+
+            registry.activateProject(projectB, from: projectA)
+            #expect(registry.openStates.isEmpty)
+            #expect(!PanelHost.shared.isOpen(ExtensionPanelState.hostPanelID(
+                extensionID: filesExtension,
+                panelID: "browser"
+            )))
+
+            registry.open(
+                extensionID: gitExtension,
+                panel: panel(id: "changes", position: .right, mode: .floating),
+                data: nil
+            )
+            #expect(PanelHost.shared.placement(for: ExtensionPanelState.hostPanelID(
+                extensionID: gitExtension,
+                panelID: "changes"
+            ))?.mode == .floating)
+
+            registry.activateProject(projectA, from: projectB)
+            let filesHost = ExtensionPanelState.hostPanelID(
+                extensionID: filesExtension,
+                panelID: "browser"
+            )
+            #expect(registry.state(forHostPanelID: filesHost) != nil)
+            #expect(PanelHost.shared.placement(for: filesHost)?.position == .bottom)
+            #expect(PanelHost.shared.placement(for: filesHost)?.mode == .pinned)
+            #expect(registry.state(forHostPanelID: filesHost)?.initialData == .object(["path": .string("/a")]))
+            #expect(!PanelHost.shared.isOpen(ExtensionPanelState.hostPanelID(
+                extensionID: gitExtension,
+                panelID: "changes"
+            )))
+
+            registry.activateProject(projectB, from: projectA)
+            #expect(PanelHost.shared.isOpen(ExtensionPanelState.hostPanelID(
+                extensionID: gitExtension,
+                panelID: "changes"
+            )))
+            #expect(!PanelHost.shared.isOpen(filesHost))
+        }
+
+        @Test("project activation leaves the builtin console open")
+        func projectActivationPreservesBuiltinConsole() {
+            let registry = ExtensionPanelRegistry.shared
+            let projectA = UUID()
+            let projectB = UUID()
+            let extensionID = "console-coexist-\(UUID().uuidString)"
+            PanelHost.shared.open(BuiltinPanel.extensionConsole, at: .bottom, mode: .floating)
+            defer {
+                PanelHost.shared.close(BuiltinPanel.extensionConsole)
+                registry.closeAll(extensionID: extensionID)
+                registry.activateProject(nil, from: registry.activeProjectID)
+            }
+
+            registry.activateProject(projectA, from: nil)
+            registry.open(extensionID: extensionID, panel: panel(id: "side"), data: nil)
+            registry.activateProject(projectB, from: projectA)
+
+            #expect(PanelHost.shared.isOpen(BuiltinPanel.extensionConsole))
+            #expect(registry.openStates.isEmpty)
+        }
+
+        @Test("closeAll purges inactive project snapshots for that extension")
+        func closeAllPurgesInactiveSnapshots() {
+            let registry = ExtensionPanelRegistry.shared
+            let projectA = UUID()
+            let projectB = UUID()
+            let extensionID = "purge-\(UUID().uuidString)"
+            defer {
+                registry.closeAll(extensionID: extensionID)
+                registry.activateProject(nil, from: registry.activeProjectID)
+            }
+
+            registry.activateProject(projectA, from: nil)
+            registry.open(extensionID: extensionID, panel: panel(id: "files"), data: nil)
+            registry.activateProject(projectB, from: projectA)
+            registry.closeAll(extensionID: extensionID)
+            registry.activateProject(projectA, from: projectB)
+
+            #expect(registry.openStates.isEmpty)
+            #expect(!PanelHost.shared.isOpen(ExtensionPanelState.hostPanelID(
+                extensionID: extensionID,
+                panelID: "files"
+            )))
+        }
+
+        @Test("purgeProject drops snapshots and live panels for that project")
+        func purgeProjectDropsState() {
+            let registry = ExtensionPanelRegistry.shared
+            let projectA = UUID()
+            let projectB = UUID()
+            let extensionID = "purge-project-\(UUID().uuidString)"
+            defer {
+                registry.closeAll(extensionID: extensionID)
+                registry.activateProject(nil, from: registry.activeProjectID)
+            }
+
+            registry.activateProject(projectA, from: nil)
+            registry.open(extensionID: extensionID, panel: panel(id: "files"), data: nil)
+            registry.activateProject(projectB, from: projectA)
+            registry.purgeProject(projectA)
+            registry.activateProject(projectA, from: projectB)
+
+            #expect(registry.openStates.isEmpty)
+        }
+
         private func panel(
             id: String,
-            position: PanelPosition = .right
+            position: PanelPosition = .right,
+            mode: PanelMode = .pinned
         ) -> ExtensionPanel {
-            ExtensionPanel(id: id, entry: "index.html", position: position, mode: .pinned)
+            ExtensionPanel(id: id, entry: "index.html", position: position, mode: mode)
         }
 
         private func waitFor(timeout: TimeInterval, condition: () -> Bool) async -> Bool {

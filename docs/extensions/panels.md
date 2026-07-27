@@ -100,3 +100,11 @@ window.muxy.panels.close(panelID): Promise<void>;
 ```
 
 `data` overrides the panel's `defaultData` for that instance and is exposed to the page as `window.muxy.data`. Opening a panel is a page capability — neither the background script nor [`runScript`](scripts.md) commands have a panels API. Panels close automatically when the extension is disabled or stopped.
+
+## Per-project session
+
+Open extension panels are tracked **per project for the current app session** (not across restarts). Switching projects hides the previous project's panels and restores that project's last open set — position, pin/float mode, and open `data` included. Worktree switches within a project leave panels alone.
+
+On project switch Muxy **destroys and recreates** panel webviews (low memory). In-page JS state is not preserved; persist with [`muxy.storage`](storage.md) or react to [`project.switched`](events.md). The switch force-closes live panels (no `onBeforeClose` veto) and emits `panel.closed` / `panel.opened` before `project.switched`.
+
+The built-in Extension Output console is global, not per-project. Panel width/height preferences are also global.

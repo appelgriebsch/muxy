@@ -33,6 +33,127 @@ struct AppStateSelectProjectTests {
         #expect(selected == [project.id])
     }
 
+    @Test("selecting projects swaps extension panels via the registry")
+    func selectProjectSwapsExtensionPanels() {
+        let projectA = Project(name: "api", path: "/tmp/api-\(UUID().uuidString)")
+        let projectB = Project(name: "web", path: "/tmp/web-\(UUID().uuidString)")
+        let worktreeA = Worktree(name: projectA.name, path: projectA.path, isPrimary: true)
+        let worktreeB = Worktree(name: projectB.name, path: projectB.path, isPrimary: true)
+        let appState = makeAppState()
+        let registry = ExtensionPanelRegistry.shared
+        let extensionA = "appstate-files-\(UUID().uuidString)"
+        let extensionB = "appstate-git-\(UUID().uuidString)"
+        defer {
+            registry.closeAll(extensionID: extensionA)
+            registry.closeAll(extensionID: extensionB)
+            registry.activateProject(nil, from: registry.activeProjectID)
+        }
+
+        appState.selectProject(projectA, worktree: worktreeA)
+        registry.open(
+            extensionID: extensionA,
+            panel: ExtensionPanel(id: "files", entry: "index.html", mode: .pinned),
+            data: nil
+        )
+
+        appState.selectProject(projectB, worktree: worktreeB)
+        #expect(!PanelHost.shared.isOpen(ExtensionPanelState.hostPanelID(
+            extensionID: extensionA,
+            panelID: "files"
+        )))
+        registry.open(
+            extensionID: extensionB,
+            panel: ExtensionPanel(id: "changes", entry: "index.html", mode: .floating),
+            data: nil
+        )
+
+        appState.selectProject(projectA, worktree: worktreeA)
+        #expect(PanelHost.shared.isOpen(ExtensionPanelState.hostPanelID(
+            extensionID: extensionA,
+            panelID: "files"
+        )))
+        #expect(!PanelHost.shared.isOpen(ExtensionPanelState.hostPanelID(
+            extensionID: extensionB,
+            panelID: "changes"
+        )))
+    }
+
+    @Test("selectNextProject swaps extension panels")
+    func selectNextProjectSwapsExtensionPanels() {
+        let projectA = Project(name: "api", path: "/tmp/api-\(UUID().uuidString)")
+        let projectB = Project(name: "web", path: "/tmp/web-\(UUID().uuidString)")
+        let worktreeA = Worktree(name: projectA.name, path: projectA.path, isPrimary: true)
+        let worktreeB = Worktree(name: projectB.name, path: projectB.path, isPrimary: true)
+        let appState = makeAppState()
+        let registry = ExtensionPanelRegistry.shared
+        let extensionID = "appstate-cycle-\(UUID().uuidString)"
+        defer {
+            registry.closeAll(extensionID: extensionID)
+            registry.activateProject(nil, from: registry.activeProjectID)
+        }
+
+        appState.selectProject(projectA, worktree: worktreeA)
+        registry.open(
+            extensionID: extensionID,
+            panel: ExtensionPanel(id: "files", entry: "index.html", mode: .pinned),
+            data: nil
+        )
+
+        appState.selectNextProject(
+            projects: [projectA, projectB],
+            worktrees: [
+                projectA.id: [worktreeA],
+                projectB.id: [worktreeB],
+            ]
+        )
+        #expect(!PanelHost.shared.isOpen(ExtensionPanelState.hostPanelID(
+            extensionID: extensionID,
+            panelID: "files"
+        )))
+
+        appState.selectNextProject(
+            projects: [projectA, projectB],
+            worktrees: [
+                projectA.id: [worktreeA],
+                projectB.id: [worktreeB],
+            ]
+        )
+        #expect(PanelHost.shared.isOpen(ExtensionPanelState.hostPanelID(
+            extensionID: extensionID,
+            panelID: "files"
+        )))
+    }
+
+    @Test("removing a project purges its panel snapshots")
+    func removeProjectPurgesPanelSnapshots() {
+        let projectA = Project(name: "api", path: "/tmp/api-\(UUID().uuidString)")
+        let projectB = Project(name: "web", path: "/tmp/web-\(UUID().uuidString)")
+        let worktreeA = Worktree(name: projectA.name, path: projectA.path, isPrimary: true)
+        let worktreeB = Worktree(name: projectB.name, path: projectB.path, isPrimary: true)
+        let appState = makeAppState()
+        let registry = ExtensionPanelRegistry.shared
+        let extensionID = "appstate-remove-\(UUID().uuidString)"
+        defer {
+            registry.closeAll(extensionID: extensionID)
+            registry.activateProject(nil, from: registry.activeProjectID)
+        }
+
+        appState.selectProject(projectA, worktree: worktreeA)
+        registry.open(
+            extensionID: extensionID,
+            panel: ExtensionPanel(id: "files", entry: "index.html", mode: .pinned),
+            data: nil
+        )
+        appState.selectProject(projectB, worktree: worktreeB)
+        appState.removeProject(projectA.id)
+        appState.selectProject(projectA, worktree: worktreeA)
+
+        #expect(!PanelHost.shared.isOpen(ExtensionPanelState.hostPanelID(
+            extensionID: extensionID,
+            panelID: "files"
+        )))
+    }
+
     private func makeAppState() -> AppState {
         AppState(
             selectionStore: SelectionStoreStub(),
