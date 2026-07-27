@@ -94,6 +94,48 @@ struct CopilotProviderTests {
         }
     }
 
+    @Test("verify needs repair when hook file version drifts")
+    func verifyNeedsRepairForWrongVersion() throws {
+        try withFixture { fixture in
+            let script = "/tmp/muxy-copilot-hook.sh"
+            try fixture.provider.install(hookScriptPath: script)
+            #expect(fixture.provider.verify(hookScriptPath: script) == .satisfied)
+
+            var settings = try fixture.settings()
+            settings["version"] = 2
+            try fixture.writeSettings(settings)
+            #expect(fixture.provider.verify(hookScriptPath: script) == .needsRepair)
+
+            try fixture.provider.install(hookScriptPath: script)
+            #expect(try fixture.settings()["version"] as? Int == 1)
+            #expect(fixture.provider.verify(hookScriptPath: script) == .satisfied)
+        }
+    }
+
+    @Test("verify needs repair when timeout or type drifts")
+    func verifyNeedsRepairForEntryShapeDrift() throws {
+        try withFixture { fixture in
+            let script = "/tmp/muxy-copilot-hook.sh"
+            try fixture.provider.install(hookScriptPath: script)
+
+            var hooks = try #require(try fixture.settings()["hooks"] as? [String: Any])
+            var stop = try #require(hooks["agentStop"] as? [[String: Any]])
+            stop[0]["timeoutSec"] = 99
+            hooks["agentStop"] = stop
+            try fixture.writeHooks(hooks)
+            #expect(fixture.provider.verify(hookScriptPath: script) == .needsRepair)
+
+            try fixture.provider.install(hookScriptPath: script)
+            #expect(fixture.provider.verify(hookScriptPath: script) == .satisfied)
+            let repaired = try #require(
+                try fixture.settings()["hooks"] as? [String: Any]
+            )
+            let repairedStop = try #require(repaired["agentStop"] as? [[String: Any]])
+            #expect(repairedStop.first?["timeoutSec"] as? Int == 10)
+            #expect(repairedStop.first?["type"] as? String == "command")
+        }
+    }
+
     @Test("uninstall removes Muxy hooks while preserving foreign hooks")
     func uninstallPreservesForeignHooks() throws {
         try withFixture { fixture in
@@ -176,8 +218,13 @@ struct CopilotProviderTests {
         init() throws {
             rootURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent("CopilotProviderTests-\(UUID().uuidString)", isDirectory: true)
-            hooksURL = rootURL.appendingPathComponent(".copilot/hooks/muxy-notify.json")
-            provider = CopilotProvider(homeDirectory: rootURL.path, pathEnvironment: "")
+            let copilotHome = rootURL.appendingPathComponent(".copilot")
+            hooksURL = copilotHome.appendingPathComponent("hooks/muxy-notify.json")
+            provider = CopilotProvider(
+                homeDirectory: rootURL.path,
+                pathEnvironment: "",
+                copilotHome: copilotHome.path
+            )
             try FileManager.default.createDirectory(
                 at: hooksURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true
@@ -193,8 +240,12 @@ struct CopilotProviderTests {
         }
 
         func writeHooks(_ hooks: [String: Any]) throws {
+            try writeSettings(["version": 1, "hooks": hooks])
+        }
+
+        func writeSettings(_ settings: [String: Any]) throws {
             let data = try JSONSerialization.data(
-                withJSONObject: ["version": 1, "hooks": hooks],
+                withJSONObject: settings,
                 options: [.prettyPrinted, .sortedKeys]
             )
             try data.write(to: hooksURL)

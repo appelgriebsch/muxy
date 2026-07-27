@@ -11,13 +11,20 @@ struct CopilotProvider: AIProviderIntegration, AIAgentLaunchProvider {
     var agentLaunchConfiguration: AIAgentLaunchConfiguration {
         AIAgentLaunchConfiguration(
             executable: "copilot",
-            headlessArguments: ["-p"]
+            headlessArguments: [
+                "--silent",
+                "--no-ask-user",
+                "--available-tools=",
+                "-p",
+            ],
+            modelArgument: nil
         )
     }
 
     private static let muxyMarker = "muxy-notification-hook"
     private static let hookFileName = "muxy-notify.json"
     private static let hookTimeoutSeconds = 10
+    private static let hookFileVersion = 1
 
     static let bindings: [(settingsKey: String, argument: String)] = [
         ("userPromptSubmitted", "user-prompt-submit"),
@@ -93,13 +100,16 @@ struct CopilotProvider: AIProviderIntegration, AIAgentLaunchProvider {
     func verify(hookScriptPath: String) -> HookVerification {
         guard ClaudeCodeProvider.fileContainsMuxyMarker(at: hookFilePath) else { return .needsRepair }
         guard let settings = try? ClaudeCodeProvider.readJSON(at: hookFilePath),
+              settings["version"] as? Int == Self.hookFileVersion,
               let hooks = settings["hooks"] as? [String: Any]
         else { return .needsRepair }
 
         for binding in Self.bindings {
-            let expected = Self.hookCommand(hookScript: hookScriptPath, argument: binding.argument)
+            let expected = Self.buildHookEntry(
+                bash: Self.hookCommand(hookScript: hookScriptPath, argument: binding.argument)
+            )
             let entries = hooks[binding.settingsKey] as? [[String: Any]]
-            guard Self.hasSingleMuxyHook(entries: entries, expectedBash: expected) else {
+            guard Self.hasSingleMuxyHook(entries: entries, expected: expected) else {
                 return .needsRepair
             }
         }
@@ -108,17 +118,25 @@ struct CopilotProvider: AIProviderIntegration, AIAgentLaunchProvider {
 
     func install(hookScriptPath: String) throws {
         var settings = try Self.readSettings(at: hookFilePath)
-        settings["version"] = settings["version"] ?? 1
+        var changed = false
+        if settings["version"] as? Int != Self.hookFileVersion {
+            settings["version"] = Self.hookFileVersion
+            changed = true
+        }
         var hooks = settings["hooks"] as? [String: Any] ?? [:]
 
-        var changed = false
         for binding in Self.bindings {
-            let bash = Self.hookCommand(hookScript: hookScriptPath, argument: binding.argument)
+            let expected = Self.buildHookEntry(
+                bash: Self.hookCommand(hookScript: hookScriptPath, argument: binding.argument)
+            )
             let existing = hooks[binding.settingsKey] as? [[String: Any]]
-            if Self.hasSingleMuxyHook(entries: existing, expectedBash: bash) {
+            if Self.hasSingleMuxyHook(entries: existing, expected: expected) {
                 continue
             }
-            hooks[binding.settingsKey] = Self.mergeHookArray(existing: existing, bash: bash)
+            hooks[binding.settingsKey] = Self.mergeHookArray(
+                existing: existing,
+                entry: expected
+            )
             changed = true
         }
 
@@ -151,18 +169,16 @@ struct CopilotProvider: AIProviderIntegration, AIAgentLaunchProvider {
         "\(ShellEscaper.quote(hookScript)) \(argument) # \(muxyMarker)"
     }
 
-    static func hasSingleMuxyHook(entries: [[String: Any]]?, expectedBash: String) -> Bool {
-        let muxyCommands = entries?.compactMap { entry -> String? in
-            guard let bash = entry["bash"] as? String, bash.contains(muxyMarker) else { return nil }
-            return bash
-        } ?? []
-        return muxyCommands == [expectedBash]
+    static func hasSingleMuxyHook(entries: [[String: Any]]?, expected: [String: Any]) -> Bool {
+        let muxyEntries = entries?.filter(isMuxyHookEntry) ?? []
+        guard muxyEntries.count == 1, let entry = muxyEntries.first else { return false }
+        return hookEntriesMatch(entry, expected)
     }
 
-    private static func mergeHookArray(existing: [[String: Any]]?, bash: String) -> [[String: Any]] {
+    private static func mergeHookArray(existing: [[String: Any]]?, entry: [String: Any]) -> [[String: Any]] {
         var entries = existing ?? []
         entries.removeAll { isMuxyHookEntry($0) }
-        entries.append(buildHookEntry(bash: bash))
+        entries.append(entry)
         return entries
     }
 
@@ -177,6 +193,23 @@ struct CopilotProvider: AIProviderIntegration, AIAgentLaunchProvider {
     private static func isMuxyHookEntry(_ entry: [String: Any]) -> Bool {
         guard let bash = entry["bash"] as? String else { return false }
         return bash.contains(muxyMarker)
+    }
+
+    private static func hookEntriesMatch(_ lhs: [String: Any], _ rhs: [String: Any]) -> Bool {
+        guard (lhs["bash"] as? String) == (rhs["bash"] as? String),
+              (lhs["type"] as? String) == (rhs["type"] as? String)
+        else { return false }
+        return intValue(lhs["timeoutSec"]) == intValue(rhs["timeoutSec"])
+    }
+
+    private static func intValue(_ value: Any?) -> Int? {
+        if let value = value as? Int {
+            return value
+        }
+        if let value = value as? NSNumber {
+            return value.intValue
+        }
+        return nil
     }
 
     private static func readSettings(at path: String) throws -> [String: Any] {
