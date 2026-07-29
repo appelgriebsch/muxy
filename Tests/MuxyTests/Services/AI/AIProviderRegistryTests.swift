@@ -121,6 +121,25 @@ struct AIProviderRegistryTests {
         #expect(provider.toolCheckCount == 0)
     }
 
+    @Test("installAll hydrates configuration environments for disabled providers that require them")
+    func installAllHydratesConfigurationEnvironmentForDisabledProvider() async {
+        let provider = RecordingProvider()
+        defer { provider.resetSettings() }
+        provider.isEnabled = false
+        provider.requiresLoginShellEnvironmentForConfiguration = true
+        let hydration = StagingRecorder()
+        let registry = AIProviderRegistry(
+            providers: [provider],
+            hydrateLoginShellPath: { hydration.record() },
+            shouldInstallHooksInDebug: { true },
+            stageHookResources: { true }
+        )
+
+        await registry.installAll()
+
+        #expect(hydration.count == 1)
+    }
+
     @Test("installAll does not touch disabled providers without managed state")
     func installAllDoesNotTouchDisabledProvidersWithoutManagedState() async {
         let provider = RecordingProvider()
@@ -303,6 +322,7 @@ private final class RecordingProvider: AIProviderIntegration {
     var hookInstalled = false
     var managedStateInstalled = false
     var toolInstalled = false
+    var requiresLoginShellEnvironmentForConfiguration = false
     var toolCheckCount = 0
     var installCount = 0
     var uninstallCount = 0

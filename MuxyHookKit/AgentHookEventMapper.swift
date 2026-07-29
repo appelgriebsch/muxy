@@ -27,8 +27,7 @@ public enum AgentHookEventMapper {
              "preToolUse":
             return MappedAgentHookEvent(phase: .working, title: "", body: "")
         case "permission-request",
-             "PermissionRequest",
-             "permissionRequest":
+             "PermissionRequest":
             return MappedAgentHookEvent(
                 phase: .waiting,
                 title: sanitize(providerTitle),
@@ -47,13 +46,14 @@ public enum AgentHookEventMapper {
                     ?? "Session completed"
             )
         case "stop-failure",
-             "StopFailure",
-             "errorOccurred":
+             "StopFailure":
             return MappedAgentHookEvent(
                 phase: .finished,
                 title: sanitize(providerTitle),
                 body: notificationBody(in: payload, fallback: "Session failed")
             )
+        case "errorOccurred":
+            return mapErrorOccurred(providerTitle: providerTitle, payload: payload)
         case "session-end",
              "SessionEnd",
              "sessionEnd":
@@ -89,10 +89,11 @@ public enum AgentHookEventMapper {
              "elicitation_complete",
              "elicitation_response",
              "shell_completed",
-             "shell_detached_completed":
+             "shell_detached_completed",
+             "agent_completed",
+             "agent_idle":
             return nil
-        case "task_complete",
-             "agent_completed":
+        case "task_complete":
             return MappedAgentHookEvent(
                 phase: .finished,
                 title: title,
@@ -116,8 +117,7 @@ public enum AgentHookEventMapper {
                 title: title,
                 body: notificationBody(in: payload, fallback: "Question waiting")
             )
-        case "idle_prompt",
-             "agent_idle":
+        case "idle_prompt":
             return MappedAgentHookEvent(
                 phase: .waiting,
                 title: title,
@@ -130,6 +130,20 @@ public enum AgentHookEventMapper {
                 body: notificationBody(in: payload, fallback: "Needs attention")
             )
         }
+    }
+
+    private static func mapErrorOccurred(
+        providerTitle: String,
+        payload: [String: Any]
+    ) -> MappedAgentHookEvent? {
+        guard payload["recoverable"] as? Bool != true else { return nil }
+        let error = payload["error"] as? [String: Any] ?? [:]
+        return MappedAgentHookEvent(
+            phase: .finished,
+            title: sanitize(providerTitle),
+            body: firstValue(in: error, keys: ["message"])
+                ?? notificationBody(in: payload, fallback: "Session failed")
+        )
     }
 
     private static func notificationBody(in payload: [String: Any], fallback: String) -> String {

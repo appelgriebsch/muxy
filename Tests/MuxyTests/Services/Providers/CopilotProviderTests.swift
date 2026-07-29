@@ -41,6 +41,7 @@ struct CopilotProviderTests {
                 #expect(entries.first?["type"] as? String == "command")
                 #expect(entries.first?["timeoutSec"] as? Int == 10)
             }
+            #expect(hooks["permissionRequest"] == nil)
         }
     }
 
@@ -64,6 +65,10 @@ struct CopilotProviderTests {
                     fixture.muxyEntry("stop", script: "/old/muxy-copilot-hook.sh"),
                     fixture.foreignEntry,
                 ],
+                "permissionRequest": [
+                    fixture.muxyEntry("permission-request"),
+                    fixture.foreignEntry,
+                ],
             ])
 
             try fixture.provider.install(hookScriptPath: "/tmp/muxy-copilot-hook.sh")
@@ -75,6 +80,9 @@ struct CopilotProviderTests {
             #expect(bashCommands.contains("echo foreign"))
             #expect(bashCommands.contains { $0.contains("/tmp/muxy-copilot-hook.sh") && $0.contains(" stop ") })
             #expect(!bashCommands.contains { $0.contains("/old/muxy-copilot-hook.sh") })
+            let permissionEntries = try #require(hooks["permissionRequest"] as? [[String: Any]])
+            #expect(permissionEntries.count == 1)
+            #expect(permissionEntries.first?["bash"] as? String == "echo foreign")
         }
     }
 
@@ -177,9 +185,11 @@ struct CopilotProviderTests {
     func usesCopilotHomeOverride() throws {
         try withFixture { fixture in
             let customHome = fixture.rootURL.appendingPathComponent("custom-copilot")
+            let environmentHomePath = fixture.rootURL.appendingPathComponent("environment-home").path
             let provider = CopilotProvider(
                 homeDirectory: fixture.rootURL.path,
                 pathEnvironment: "",
+                copilotHomeEnvironment: { environmentHomePath },
                 copilotHome: customHome.path
             )
             try provider.install(hookScriptPath: "/tmp/muxy-copilot-hook.sh")
@@ -188,6 +198,24 @@ struct CopilotProviderTests {
             #expect(FileManager.default.fileExists(atPath: path))
             #expect(provider.configPaths == [path])
             #expect(provider.isHookInstalled())
+        }
+    }
+
+    @Test("respects Copilot home resolved from the login shell environment")
+    func usesCopilotHomeEnvironment() throws {
+        try withFixture { fixture in
+            let customHome = fixture.rootURL.appendingPathComponent("shell-copilot")
+            let provider = CopilotProvider(
+                homeDirectory: fixture.rootURL.path,
+                pathEnvironment: "",
+                copilotHomeEnvironment: { customHome.path }
+            )
+
+            try provider.install(hookScriptPath: "/tmp/muxy-copilot-hook.sh")
+
+            let path = customHome.appendingPathComponent("hooks/muxy-notify.json").path
+            #expect(FileManager.default.fileExists(atPath: path))
+            #expect(provider.configPaths == [path])
         }
     }
 

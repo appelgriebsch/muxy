@@ -7,6 +7,7 @@ struct CopilotProvider: AIProviderIntegration, AIAgentLaunchProvider {
     let iconName = "copilot"
     let executableNames = ["copilot"]
     let hookScriptName = "muxy-copilot-hook"
+    let requiresLoginShellEnvironmentForConfiguration = true
 
     var agentLaunchConfiguration: AIAgentLaunchConfiguration {
         AIAgentLaunchConfiguration(
@@ -29,37 +30,42 @@ struct CopilotProvider: AIProviderIntegration, AIAgentLaunchProvider {
     static let bindings: [(settingsKey: String, argument: String)] = [
         ("userPromptSubmitted", "user-prompt-submit"),
         ("preToolUse", "pre-tool-use"),
-        ("permissionRequest", "permission-request"),
         ("notification", "notification"),
         ("agentStop", "stop"),
         ("sessionEnd", "session-end"),
-        ("errorOccurred", "stop-failure"),
+        ("errorOccurred", "errorOccurred"),
     ]
 
-    private static let managedEvents = bindings.map(\.settingsKey)
+    private static let obsoleteEvents = ["permissionRequest"]
+    private static let managedEvents = bindings.map(\.settingsKey) + obsoleteEvents
 
     private let homeDirectory: String
     private let pathEnvironment: @Sendable () -> String
+    private let copilotHomeEnvironment: @Sendable () -> String?
     private let copilotHomeOverride: String?
 
     init(
         homeDirectory: String = NSHomeDirectory(),
         pathEnvironment: @escaping @Sendable () -> String = { LoginShellPath.current },
+        copilotHomeEnvironment: @escaping @Sendable () -> String? = { LoginShellPath.currentCopilotHome },
         copilotHome: String? = nil
     ) {
         self.homeDirectory = homeDirectory
         self.pathEnvironment = pathEnvironment
+        self.copilotHomeEnvironment = copilotHomeEnvironment
         self.copilotHomeOverride = copilotHome
     }
 
     init(
         homeDirectory: String = NSHomeDirectory(),
         pathEnvironment: String,
+        copilotHomeEnvironment: @escaping @Sendable () -> String? = { LoginShellPath.currentCopilotHome },
         copilotHome: String? = nil
     ) {
         self.init(
             homeDirectory: homeDirectory,
             pathEnvironment: { pathEnvironment },
+            copilotHomeEnvironment: copilotHomeEnvironment,
             copilotHome: copilotHome
         )
     }
@@ -68,7 +74,7 @@ struct CopilotProvider: AIProviderIntegration, AIAgentLaunchProvider {
         if let copilotHomeOverride, !copilotHomeOverride.isEmpty {
             return copilotHomeOverride
         }
-        if let envHome = ProcessInfo.processInfo.environment["COPILOT_HOME"], !envHome.isEmpty {
+        if let envHome = copilotHomeEnvironment(), !envHome.isEmpty {
             return envHome
         }
         return homeDirectory + "/.copilot"
@@ -113,6 +119,10 @@ struct CopilotProvider: AIProviderIntegration, AIAgentLaunchProvider {
                 return .needsRepair
             }
         }
+        for event in Self.obsoleteEvents {
+            let entries = hooks[event] as? [[String: Any]]
+            guard Self.muxyHookCount(entries) == 0 else { return .needsRepair }
+        }
         return .satisfied
     }
 
@@ -124,6 +134,19 @@ struct CopilotProvider: AIProviderIntegration, AIAgentLaunchProvider {
             changed = true
         }
         var hooks = settings["hooks"] as? [String: Any] ?? [:]
+
+        for event in Self.obsoleteEvents {
+            guard var entries = hooks[event] as? [[String: Any]] else { continue }
+            let initialCount = entries.count
+            entries.removeAll { Self.isMuxyHookEntry($0) }
+            guard entries.count != initialCount else { continue }
+            if entries.isEmpty {
+                hooks.removeValue(forKey: event)
+            } else {
+                hooks[event] = entries
+            }
+            changed = true
+        }
 
         for binding in Self.bindings {
             let expected = Self.buildHookEntry(
@@ -173,6 +196,10 @@ struct CopilotProvider: AIProviderIntegration, AIAgentLaunchProvider {
         let muxyEntries = entries?.filter(isMuxyHookEntry) ?? []
         guard muxyEntries.count == 1, let entry = muxyEntries.first else { return false }
         return hookEntriesMatch(entry, expected)
+    }
+
+    private static func muxyHookCount(_ entries: [[String: Any]]?) -> Int {
+        entries?.count(where: isMuxyHookEntry) ?? 0
     }
 
     private static func mergeHookArray(existing: [[String: Any]]?, entry: [String: Any]) -> [[String: Any]] {
