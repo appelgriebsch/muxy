@@ -325,6 +325,71 @@ struct PanelSharedStateTests {
             #expect(registry.openStates.isEmpty)
         }
 
+        @Test("project restore skips snapshots that would displace the builtin console")
+        func projectRestoreSkipsConsoleSlotConflict() {
+            let registry = ExtensionPanelRegistry.shared
+            let projectA = UUID()
+            let projectB = UUID()
+            let extensionID = "console-slot-\(UUID().uuidString)"
+            defer {
+                PanelHost.shared.close(BuiltinPanel.extensionConsole)
+                registry.closeAll(extensionID: extensionID)
+                registry.activateProject(nil, from: registry.activeProjectID)
+            }
+
+            registry.activateProject(projectA, from: nil)
+            registry.open(
+                extensionID: extensionID,
+                panel: panel(id: "bottom", position: .bottom, mode: .floating),
+                data: nil
+            )
+            let hostPanelID = ExtensionPanelState.hostPanelID(
+                extensionID: extensionID,
+                panelID: "bottom"
+            )
+            #expect(PanelHost.shared.isOpen(hostPanelID))
+
+            registry.activateProject(projectB, from: projectA)
+            PanelHost.shared.open(BuiltinPanel.extensionConsole, at: .bottom, mode: .floating)
+            registry.activateProject(projectA, from: projectB)
+
+            #expect(PanelHost.shared.isOpen(BuiltinPanel.extensionConsole))
+            #expect(!PanelHost.shared.isOpen(hostPanelID))
+            #expect(registry.openStates.isEmpty)
+        }
+
+        @Test("captureLiveSnapshots preserves panel entry and chrome fields")
+        func captureLiveSnapshotsPreservesPanelDefinition() {
+            let registry = ExtensionPanelRegistry.shared
+            let extensionID = "snapshot-chrome-\(UUID().uuidString)"
+            let defined = ExtensionPanel(
+                id: "review",
+                title: "Review",
+                icon: .symbol("checklist"),
+                entry: "panels/review.html",
+                position: .right,
+                mode: .floating,
+                hiddenControls: [.pin],
+                hideTopbar: false,
+                defaultData: .object(["mode": .string("diff")])
+            )
+            defer {
+                registry.closeAll(extensionID: extensionID)
+                registry.activateProject(nil, from: registry.activeProjectID)
+            }
+
+            registry.activateProject(UUID(), from: nil)
+            registry.open(extensionID: extensionID, panel: defined, data: .object(["mode": .string("diff")]))
+            let snapshots = registry.captureLiveSnapshots()
+            let snapshot = snapshots.first { $0.extensionID == extensionID && $0.panelID == "review" }
+
+            #expect(snapshot?.entry == "panels/review.html")
+            #expect(snapshot?.title == "Review")
+            #expect(snapshot?.icon == .symbol("checklist"))
+            #expect(snapshot?.hiddenControls == [.pin])
+            #expect(snapshot?.initialData == .object(["mode": .string("diff")]))
+        }
+
         @Test("closeAll purges inactive project snapshots for that extension")
         func closeAllPurgesInactiveSnapshots() {
             let registry = ExtensionPanelRegistry.shared
@@ -526,6 +591,25 @@ struct PanelSharedStateTests {
             restoration.restoreAfterClosing(panelID: "third")
 
             #expect(window.firstResponder === previousResponder)
+        }
+
+        @Test("discard does not restore the previous responder")
+        func discardDoesNotRestoreFocus() {
+            let restoration = PanelFocusRestoration()
+            let window = focusTestWindow()
+            let previousResponder = FocusTestView()
+            let panelView = FocusTestView()
+            window.contentView?.addSubview(previousResponder)
+            window.contentView?.addSubview(panelView)
+            #expect(window.makeFirstResponder(previousResponder))
+
+            restoration.captureBeforeClaim(panelID: "files", panelView: panelView)
+            #expect(window.makeFirstResponder(panelView))
+
+            restoration.discard(panelID: "files")
+
+            #expect(window.firstResponder === panelView)
+            #expect(window.firstResponder !== previousResponder)
         }
     }
 

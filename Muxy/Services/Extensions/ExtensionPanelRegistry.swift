@@ -6,6 +6,60 @@ struct ExtensionPanelSnapshot: Equatable {
     let position: PanelPosition
     let mode: PanelMode
     let initialData: ExtensionJSON?
+    let entry: String
+    let title: String?
+    let icon: ExtensionIcon?
+    let hiddenControls: [PanelHeaderControl]
+    let headerButtons: [ExtensionPanelHeaderButton]
+    let hideTopbar: Bool
+
+    init(
+        extensionID: String,
+        panelID: String,
+        position: PanelPosition,
+        mode: PanelMode,
+        initialData: ExtensionJSON?,
+        entry: String,
+        title: String? = nil,
+        icon: ExtensionIcon? = nil,
+        hiddenControls: [PanelHeaderControl] = [],
+        headerButtons: [ExtensionPanelHeaderButton] = [],
+        hideTopbar: Bool = false
+    ) {
+        self.extensionID = extensionID
+        self.panelID = panelID
+        self.position = position
+        self.mode = mode
+        self.initialData = initialData
+        self.entry = entry
+        self.title = title
+        self.icon = icon
+        self.hiddenControls = hiddenControls
+        self.headerButtons = headerButtons
+        self.hideTopbar = hideTopbar
+    }
+
+    init(
+        extensionID: String,
+        panel: ExtensionPanel,
+        position: PanelPosition,
+        mode: PanelMode,
+        initialData: ExtensionJSON?
+    ) {
+        self.init(
+            extensionID: extensionID,
+            panelID: panel.id,
+            position: position,
+            mode: mode,
+            initialData: initialData,
+            entry: panel.entry,
+            title: panel.title,
+            icon: panel.icon,
+            hiddenControls: panel.hiddenControls,
+            headerButtons: panel.headerButtons,
+            hideTopbar: panel.hideTopbar
+        )
+    }
 }
 
 @MainActor
@@ -63,7 +117,7 @@ final class ExtensionPanelRegistry {
         openStates.removeAll { $0.hostPanelID == hostPanelID }
         let state = ExtensionPanelState(
             extensionID: extensionID,
-            panelID: panel.id,
+            panel: panel,
             initialData: data ?? panel.defaultData
         )
         openStates.append(state)
@@ -152,9 +206,11 @@ final class ExtensionPanelRegistry {
     func captureLiveSnapshots() -> [ExtensionPanelSnapshot] {
         openStates.compactMap { state in
             guard let placement = PanelHost.shared.placement(for: state.hostPanelID) else { return nil }
+            let panel = ExtensionStore.shared.loadedExtension(id: state.extensionID)?
+                .manifest.panel(id: state.panelID) ?? state.panel
             return ExtensionPanelSnapshot(
                 extensionID: state.extensionID,
-                panelID: state.panelID,
+                panel: panel,
                 position: placement.position,
                 mode: placement.mode,
                 initialData: state.initialData
@@ -164,6 +220,9 @@ final class ExtensionPanelRegistry {
 
     private func restore(_ snapshot: ExtensionPanelSnapshot) {
         guard let panel = panelForRestore(snapshot) else { return }
+        guard !wouldDisplaceExtensionConsole(position: snapshot.position, mode: snapshot.mode) else {
+            return
+        }
         open(
             extensionID: snapshot.extensionID,
             panel: panel,
@@ -171,6 +230,10 @@ final class ExtensionPanelRegistry {
             position: snapshot.position,
             mode: snapshot.mode
         )
+    }
+
+    private func wouldDisplaceExtensionConsole(position: PanelPosition, mode: PanelMode) -> Bool {
+        PanelHost.shared.panel(at: position, mode: mode)?.panelID == BuiltinPanel.extensionConsole
     }
 
     private func panelForRestore(_ snapshot: ExtensionPanelSnapshot) -> ExtensionPanel? {
@@ -184,9 +247,14 @@ final class ExtensionPanelRegistry {
         }
         return ExtensionPanel(
             id: snapshot.panelID,
-            entry: "index.html",
+            title: snapshot.title,
+            icon: snapshot.icon,
+            entry: snapshot.entry,
             position: snapshot.position,
             mode: snapshot.mode,
+            hiddenControls: snapshot.hiddenControls,
+            headerButtons: snapshot.headerButtons,
+            hideTopbar: snapshot.hideTopbar,
             defaultData: snapshot.initialData
         )
     }
