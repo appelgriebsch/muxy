@@ -107,4 +107,4 @@ Open extension panels are tracked **per project for the current app session** (n
 
 On project switch Muxy **destroys and recreates** panel webviews (low memory). In-page JS state is not preserved; persist with [`muxy.storage`](storage.md) or react to [`project.switched`](events.md). The switch force-closes live panels (no `onBeforeClose` veto) and emits `panel.closed` / `panel.opened` before `project.switched`.
 
-The built-in Extension Output console is global, not per-project. Restoring a project's panels never displaces the console when it already occupies the same position and mode (one floating/pinned panel per position); that conflicting snapshot is skipped. Panel width/height preferences are also global.
+The built-in Extension Output console is global, not per-project. Restoring a project's panels never displaces the console when it already occupies the same position and mode (one floating/pinned panel per position); that conflicting panel stays closed for now and is remembered, so it reopens on a later switch back once the slot is free. Panel width/height preferences are also global.

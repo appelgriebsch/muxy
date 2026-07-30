@@ -22,7 +22,7 @@ final class ExtensionPanelState: Identifiable {
 
     var hostPanelID: String { ExtensionPanelState.hostPanelID(extensionID: extensionID, panelID: panelID) }
 
-    static func hostPanelID(extensionID: String, panelID: String) -> String {
+    nonisolated static func hostPanelID(extensionID: String, panelID: String) -> String {
         "ext:\(extensionID):\(panelID)"
     }
 }

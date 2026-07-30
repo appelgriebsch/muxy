@@ -358,6 +358,43 @@ struct PanelSharedStateTests {
             #expect(registry.openStates.isEmpty)
         }
 
+        @Test("a snapshot blocked by the console is restored once the console closes")
+        func projectRestoreRetainsConsoleBlockedSnapshot() {
+            let registry = ExtensionPanelRegistry.shared
+            let projectA = UUID()
+            let projectB = UUID()
+            let extensionID = "console-deferred-\(UUID().uuidString)"
+            defer {
+                PanelHost.shared.close(BuiltinPanel.extensionConsole)
+                registry.closeAll(extensionID: extensionID)
+                registry.activateProject(nil, from: registry.activeProjectID)
+            }
+
+            registry.activateProject(projectA, from: nil)
+            registry.open(
+                extensionID: extensionID,
+                panel: panel(id: "bottom", position: .bottom, mode: .floating),
+                data: nil
+            )
+            let hostPanelID = ExtensionPanelState.hostPanelID(
+                extensionID: extensionID,
+                panelID: "bottom"
+            )
+
+            registry.activateProject(projectB, from: projectA)
+            PanelHost.shared.open(BuiltinPanel.extensionConsole, at: .bottom, mode: .floating)
+            registry.activateProject(projectA, from: projectB)
+            #expect(!PanelHost.shared.isOpen(hostPanelID))
+
+            registry.activateProject(projectB, from: projectA)
+            PanelHost.shared.close(BuiltinPanel.extensionConsole)
+            registry.activateProject(projectA, from: projectB)
+
+            #expect(PanelHost.shared.isOpen(hostPanelID))
+            #expect(PanelHost.shared.placement(for: hostPanelID)?.position == .bottom)
+            #expect(PanelHost.shared.placement(for: hostPanelID)?.mode == .floating)
+        }
+
         @Test("captureLiveSnapshots preserves panel entry and chrome fields")
         func captureLiveSnapshotsPreservesPanelDefinition() {
             let registry = ExtensionPanelRegistry.shared

@@ -60,6 +60,10 @@ struct ExtensionPanelSnapshot: Equatable {
             hideTopbar: panel.hideTopbar
         )
     }
+
+    var hostPanelID: String {
+        ExtensionPanelState.hostPanelID(extensionID: extensionID, panelID: panelID)
+    }
 }
 
 @MainActor
@@ -85,23 +89,29 @@ final class ExtensionPanelRegistry {
         }
 
         if let previousProjectID {
-            snapshotsByProject[previousProjectID] = captureLiveSnapshots()
+            snapshotsByProject[previousProjectID] = capturedSnapshots(for: previousProjectID)
         }
 
-        clearLiveExtensionPanels(restoreFocus: false)
+        clearLiveExtensionPanels()
         activeProjectID = projectID
 
         guard let projectID else { return }
-        let snapshots = snapshotsByProject.removeValue(forKey: projectID) ?? []
-        for snapshot in snapshots {
+        var deferred: [ExtensionPanelSnapshot] = []
+        for snapshot in snapshotsByProject.removeValue(forKey: projectID) ?? [] {
+            if wouldDisplaceExtensionConsole(position: snapshot.position, mode: snapshot.mode) {
+                deferred.append(snapshot)
+                continue
+            }
             restore(snapshot)
         }
+        guard !deferred.isEmpty else { return }
+        snapshotsByProject[projectID] = deferred
     }
 
     func purgeProject(_ projectID: UUID) {
         snapshotsByProject.removeValue(forKey: projectID)
         guard activeProjectID == projectID else { return }
-        clearLiveExtensionPanels(restoreFocus: false)
+        clearLiveExtensionPanels()
         activeProjectID = nil
     }
 
@@ -163,13 +173,9 @@ final class ExtensionPanelRegistry {
         }
     }
 
-    func forceClose(hostPanelID: String, restoreFocus: Bool = true) {
+    func forceClose(hostPanelID: String) {
         let closed = openStates.filter { $0.hostPanelID == hostPanelID }
-        if restoreFocus {
-            PanelFocusRestoration.shared.restoreAfterClosing(panelID: hostPanelID)
-        } else {
-            PanelFocusRestoration.shared.discard(panelID: hostPanelID)
-        }
+        PanelFocusRestoration.shared.restoreAfterClosing(panelID: hostPanelID)
         PanelHost.shared.close(hostPanelID)
         openStates.removeAll { $0.hostPanelID == hostPanelID }
         for state in closed {
@@ -218,11 +224,16 @@ final class ExtensionPanelRegistry {
         }
     }
 
+    private func capturedSnapshots(for projectID: UUID) -> [ExtensionPanelSnapshot] {
+        let live = captureLiveSnapshots()
+        let liveHostPanelIDs = Set(live.map(\.hostPanelID))
+        let deferred = (snapshotsByProject[projectID] ?? [])
+            .filter { !liveHostPanelIDs.contains($0.hostPanelID) }
+        return live + deferred
+    }
+
     private func restore(_ snapshot: ExtensionPanelSnapshot) {
         guard let panel = panelForRestore(snapshot) else { return }
-        guard !wouldDisplaceExtensionConsole(position: snapshot.position, mode: snapshot.mode) else {
-            return
-        }
         open(
             extensionID: snapshot.extensionID,
             panel: panel,
@@ -259,14 +270,10 @@ final class ExtensionPanelRegistry {
         )
     }
 
-    private func clearLiveExtensionPanels(restoreFocus: Bool) {
+    private func clearLiveExtensionPanels() {
         let closed = openStates
         for state in closed {
-            if restoreFocus {
-                PanelFocusRestoration.shared.restoreAfterClosing(panelID: state.hostPanelID)
-            } else {
-                PanelFocusRestoration.shared.discard(panelID: state.hostPanelID)
-            }
+            PanelFocusRestoration.shared.discard(panelID: state.hostPanelID)
             PanelHost.shared.close(state.hostPanelID)
         }
         openStates = []
