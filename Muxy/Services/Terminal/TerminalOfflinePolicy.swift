@@ -12,6 +12,18 @@ enum TerminalOfflinePolicy {
         !hasRunningProcess && !isAlternateScreen
     }
 
+    static func hasRunningProcess(
+        foregroundProcessName: String?,
+        foregroundProcessArguments: [String]?,
+        isShellCommandRunning: Bool
+    ) -> Bool {
+        guard !isShellCommandRunning else { return true }
+        return !TerminalProcessClassifier.isInteractiveShell(
+            processName: foregroundProcessName,
+            arguments: foregroundProcessArguments
+        )
+    }
+
     static func keepsAwake(isOnScreen: Bool, isFocused: Bool) -> Bool {
         isOnScreen && isFocused
     }
