@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ExtensionPopoverView: View {
     let state: ExtensionPopoverState
+    var size: CGSize?
 
     @Environment(AppState.self) private var appState
     @Environment(ProjectStore.self) private var projectStore
@@ -30,19 +31,31 @@ struct ExtensionPopoverView: View {
                 Color.clear
             }
         }
-        .frame(width: state.width, height: state.height)
+        .frame(
+            width: size?.width ?? state.width,
+            height: size?.height ?? state.height
+        )
     }
 }
 
 extension View {
-    func extensionPopover(anchorID: String, host: PopoverHost) -> some View {
-        modifier(ExtensionPopoverModifier(anchorID: anchorID, host: host))
+    func extensionPopover(
+        anchorID: String,
+        host: PopoverHost,
+        preferredEdge: NSRectEdge = .maxY
+    ) -> some View {
+        modifier(ExtensionPopoverModifier(
+            anchorID: anchorID,
+            host: host,
+            preferredEdge: preferredEdge
+        ))
     }
 }
 
 private struct ExtensionPopoverModifier: ViewModifier {
     let anchorID: String
     let host: PopoverHost
+    let preferredEdge: NSRectEdge
 
     func body(content: Content) -> some View {
         let state = host.isOpen(anchorID: anchorID) ? host.open?.state : nil
@@ -52,7 +65,8 @@ private struct ExtensionPopoverModifier: ViewModifier {
                 host: host,
                 state: state,
                 width: state?.width,
-                height: state?.height
+                height: state?.height,
+                preferredEdge: preferredEdge
             )
             .allowsHitTesting(false)
         )

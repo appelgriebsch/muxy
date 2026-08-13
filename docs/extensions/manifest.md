@@ -59,7 +59,7 @@ All Muxy-specific manifest fields live under the `muxy` object.
 | `panels` | object[] | no | Dockable/floating webview panels. See [Panels](panels.md). |
 | `popovers` | object[] | no | Transient webview popovers anchored to a topbar/status-bar item. See [Popovers](popovers.md). |
 | `sidebar` | object | no | A single full-height webview that replaces the built-in left sidebar when the user selects it. See [Sidebars](sidebars.md). |
-| `topbarItems` | object[] | no | Icons attached to the tab strip. See [Topbar](topbar.md). |
+| `topbarItems` | object[] | no | Icons shown in the title bar by default, or in the user's optional right-hand rail. See [Topbar](topbar.md). |
 | `statusBarItems` | object[] | no | Icons attached to the footer status bar. See [Status Bar](statusbar.md). |
 | `settings` | object[] | no | Typed settings shown in the Settings sidebar. See [Settings](settings.md). |
 | `remoteMethods` | object[] | no | Named API methods served to the mobile app. Requires `remote:serve`. See [Remote Methods](remote-methods.md). |

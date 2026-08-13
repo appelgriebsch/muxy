@@ -42,20 +42,38 @@ private struct IconButtonBadge: View {
 struct IconButtonChrome<Label: View>: View {
     var color: Color = MuxyTheme.fgMuted
     var hoverColor: Color = MuxyTheme.fg
+    var isEnabled = true
     let accessibilityLabel: String
     let action: () -> Void
     @ViewBuilder var label: Label
     @State private var hovered = false
 
     var body: some View {
-        Button(action: action) {
-            label
-                .foregroundStyle(hovered ? hoverColor : color)
-                .frame(width: UIMetrics.controlMedium, height: UIMetrics.controlMedium)
-                .contentShape(Rectangle())
-        }
+        Button(
+            action: {
+                guard isEnabled else { return }
+                action()
+            },
+            label: {
+                label
+                    .foregroundStyle(hovered ? hoverColor : color)
+                    .frame(width: UIMetrics.controlMedium, height: UIMetrics.controlMedium)
+                    .contentShape(Rectangle())
+            }
+        )
         .buttonStyle(.plain)
-        .onHover { hovered = $0 }
+        .onHover { hovering in
+            guard isEnabled else {
+                hovered = false
+                return
+            }
+            hovered = hovering
+        }
+        .onChange(of: isEnabled) { _, enabled in
+            if !enabled {
+                hovered = false
+            }
+        }
         .accessibilityLabel(accessibilityLabel)
     }
 }

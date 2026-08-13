@@ -38,6 +38,8 @@ struct PaneTabStrip: View {
     let focusedPaneID: UUID?
     var isWindowTitleBar: Bool = false
     var showsWindowTopbarActions = true
+    @AppStorage(TopbarPreferences.railVisibleKey)
+    private var showExtensionIconRail = TopbarPreferences.defaultRailVisible
     var showDevelopmentBadge = false
     var openProjectPath: String?
     let projectID: UUID
@@ -133,7 +135,9 @@ struct PaneTabStrip: View {
                     }
                     if isWindowTitleBar {
                         LayoutPickerMenu(projectID: projectID)
-                        ExtensionTopbarItems()
+                        if !showExtensionIconRail {
+                            ExtensionTopbarItems()
+                        }
                     }
                     if showMaximizeButton || isMaximized, let onToggleMaximize {
                         let symbol = isMaximized

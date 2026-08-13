@@ -157,6 +157,27 @@ struct SettingsCatalogTests {
     }
 
     @Test
+    func extensionIconRailSettingsAreRegisteredAndSearchable() {
+        let visible = SettingsCatalog.items.first { $0.key == TopbarPreferences.railVisibleKey }
+        let order = SettingsCatalog.items.first { $0.key == TopbarPreferences.railOrderKey }
+
+        #expect(visible?.category == .appearance)
+        #expect(visible?.section == "Interface")
+        #expect(visible?.defaultValue as? Bool == TopbarPreferences.defaultRailVisible)
+        #expect(order?.category == .appearance)
+        #expect(order?.section == "Interface")
+        #expect(order?.defaultValue as? [String] == TopbarPreferences.defaultRailOrder)
+        #expect(SettingsCatalog.matchingItems(query: "extension rail").contains {
+            $0.key == TopbarPreferences.railVisibleKey
+        })
+        #expect(SettingsCatalog.matchingItems(query: "right rail").contains {
+            $0.key == TopbarPreferences.railVisibleKey
+        })
+        #expect(SettingsCatalog.jsonEditableItems.contains { $0.key == TopbarPreferences.railVisibleKey })
+        #expect(SettingsCatalog.jsonEditableItems.contains { $0.key == TopbarPreferences.railOrderKey })
+    }
+
+    @Test
     func matchCountSummaryIsOmittedWithoutQuery() {
         #expect(SettingsCatalog.matchCountSummary(for: .general, query: "") == nil)
         #expect(SettingsCatalog.matchCountSummary(for: .general, query: "   ") == nil)
