@@ -48,7 +48,7 @@ struct AIAgentLaunchProviderTests {
                     "--no-subagents",
                     "--disable-web-search",
                     "--output-format",
-                    "text",
+                    "plain",
                     "-p",
                     prompt,
                 ]
