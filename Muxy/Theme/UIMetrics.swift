@@ -45,6 +45,7 @@ enum UIMetrics {
     static var radiusXL: CGFloat { scaled(10) }
 
     static var sidebarCollapsedWidth: CGFloat { scaled(44) }
+    static var extensionIconRailWidth: CGFloat { titleBarHeight }
     static var sidebarExpandedWidth: CGFloat { scaled(220) }
     static var sidebarExpandedMinWidth: CGFloat { scaled(180) }
     static var sidebarExpandedMaxWidth: CGFloat { scaled(480) }

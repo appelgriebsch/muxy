@@ -19,7 +19,7 @@ enum ExtensionPopoverLayout {
     static func remainingSpace(
         preferredEdge: NSRectEdge,
         windowSize: CGSize,
-        railWidth: CGFloat = UIMetrics.sidebarCollapsedWidth,
+        railWidth: CGFloat = UIMetrics.extensionIconRailWidth,
         margin: CGFloat = UIMetrics.spacing7
     ) -> CGSize? {
         guard preferredEdge == .minX else { return nil }

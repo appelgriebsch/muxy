@@ -13,9 +13,11 @@ struct ExtensionTopbarRail: View {
             savedIDs: orderStore.ids
         )
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: UIMetrics.spacing3) {
+            VStack(spacing: 0) {
                 ForEach(items) { binding in
                     ExtensionTopbarItemControl(binding: binding, preferredEdge: .minX)
+                        .imageScale(.medium)
+                        .fixedSize()
                         .background {
                             if draggedID != nil {
                                 GeometryReader { geo in
