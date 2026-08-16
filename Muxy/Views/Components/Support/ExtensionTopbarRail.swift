@@ -6,6 +6,7 @@ struct ExtensionTopbarRail: View {
     @State private var draggedID: String?
     @State private var liveOrderIDs: [String]?
     @State private var frames: [String: CGRect] = [:]
+    @GestureState private var isDragging = false
 
     private var displayedItems: [ExtensionStore.TopbarItemBinding] {
         ExtensionTopbarRailOrder.displayed(
@@ -47,22 +48,26 @@ struct ExtensionTopbarRail: View {
         .coordinateSpace(name: "extension-icon-rail")
         .scrollDisabled(draggedID != nil)
         .onAppear(perform: persistFirstSeenIDs)
+        .onDisappear(perform: finishDrag)
+        .onChange(of: isDragging) { _, dragging in
+            guard !dragging else { return }
+            finishDrag()
+        }
         .onChange(of: extensionStore.topbarItems) { _, items in
             persistFirstSeenIDs()
             guard let draggedID, !items.contains(where: { $0.id == draggedID }) else { return }
-            persistLiveOrder()
-            cancelDrag()
+            finishDrag()
         }
     }
 
     private var railDragGesture: some Gesture {
         DragGesture(minimumDistance: 6, coordinateSpace: .named("extension-icon-rail"))
+            .updating($isDragging) { _, state, _ in
+                state = true
+            }
             .onChanged(handleDragChanged)
             .onEnded { _ in
-                persistLiveOrder()
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    cancelDrag()
-                }
+                finishDrag()
             }
     }
 
@@ -111,6 +116,13 @@ struct ExtensionTopbarRail: View {
         guard liveOrderIDs != nil else { return }
         let liveIDs = displayedItems.map(\.id)
         orderStore.ids = ExtensionTopbarRailOrder.applyingLiveOrder(liveIDs, to: orderStore.ids)
+    }
+
+    private func finishDrag() {
+        persistLiveOrder()
+        withAnimation(.easeInOut(duration: 0.15)) {
+            cancelDrag()
+        }
     }
 
     private func cancelDrag() {
