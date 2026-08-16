@@ -13,6 +13,8 @@ struct ExtensionTopbarItems: View {
 struct ExtensionTopbarItemControl: View {
     let binding: ExtensionStore.TopbarItemBinding
     var preferredEdge: NSRectEdge = .maxY
+    var isCommandEnabled = true
+    var showsSelectionChrome = false
 
     @Environment(AppState.self) private var appState
     @Environment(ProjectStore.self) private var projectStore
@@ -36,6 +38,10 @@ struct ExtensionTopbarItemControl: View {
         ) != nil
     }
 
+    private var showsActiveChrome: Bool {
+        showsSelectionChrome && isActive
+    }
+
     private var togglePanelID: String? {
         guard let command = binding.muxyExtension.manifest.commands.first(where: { $0.id == binding.item.command }),
               case let .togglePanel(panel) = command.action
@@ -47,16 +53,17 @@ struct ExtensionTopbarItemControl: View {
         ExtensionIconButton(
             icon: binding.displayIcon,
             muxyExtension: binding.muxyExtension,
-            color: isActive ? MuxyTheme.fg : MuxyTheme.fgMuted,
+            color: showsActiveChrome ? MuxyTheme.fg : MuxyTheme.fgMuted,
             hoverColor: MuxyTheme.fg,
+            isEnabled: isCommandEnabled,
             accessibilityLabel: binding.item.tooltip ?? binding.item.id,
             action: { triggerCommand() }
         )
         .overlay {
             RoundedRectangle(cornerRadius: UIMetrics.radiusMD, style: .continuous)
-                .strokeBorder(isActive ? MuxyTheme.accent : .clear, lineWidth: 1.5)
+                .strokeBorder(showsActiveChrome ? MuxyTheme.accent : .clear, lineWidth: 1.5)
                 .padding(UIMetrics.spacing1)
-                .animation(.easeInOut(duration: 0.15), value: isActive)
+                .animation(.easeInOut(duration: 0.15), value: showsActiveChrome)
         }
         .help(binding.item.tooltip ?? binding.item.id)
         .accessibilityValue(isActive ? L10n.string("Active") : "")
@@ -65,6 +72,7 @@ struct ExtensionTopbarItemControl: View {
     }
 
     private func triggerCommand() {
+        guard isCommandEnabled else { return }
         if let popover = extensionStore.popover(for: binding.muxyExtension, command: binding.item.command) {
             popoverHost.toggle(
                 anchorID: binding.id,

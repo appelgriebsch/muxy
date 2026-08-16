@@ -4,31 +4,40 @@ struct ExtensionTopbarRail: View {
     @Environment(ExtensionStore.self) private var extensionStore
     @State private var orderStore = ExtensionTopbarRailOrderStore.shared
     @State private var draggedID: String?
+    @State private var liveOrderIDs: [String]?
     @State private var frames: [String: CGRect] = [:]
     @State private var lastReorderTargetID: String?
 
-    var body: some View {
-        let items = ExtensionTopbarRailOrder.displayed(
+    private var displayedItems: [ExtensionStore.TopbarItemBinding] {
+        ExtensionTopbarRailOrder.displayed(
             visible: extensionStore.topbarItems,
-            savedIDs: orderStore.ids
+            savedIDs: liveOrderIDs ?? orderStore.ids
         )
+    }
+
+    var body: some View {
+        let items = displayedItems
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 0) {
                 ForEach(items) { binding in
-                    ExtensionTopbarItemControl(binding: binding, preferredEdge: .minX)
-                        .imageScale(.medium)
-                        .fixedSize()
-                        .background {
-                            if draggedID != nil {
-                                GeometryReader { geo in
-                                    Color.clear.preference(
-                                        key: StringFramePreferenceKey<ExtensionIconRailFrameTag>.self,
-                                        value: [binding.id: geo.frame(in: .named("extension-icon-rail"))]
-                                    )
-                                }
+                    ExtensionTopbarItemControl(
+                        binding: binding,
+                        preferredEdge: .minX,
+                        isCommandEnabled: draggedID == nil,
+                        showsSelectionChrome: true
+                    )
+                    .fixedSize()
+                    .background {
+                        if draggedID != nil {
+                            GeometryReader { geo in
+                                Color.clear.preference(
+                                    key: StringFramePreferenceKey<ExtensionIconRailFrameTag>.self,
+                                    value: [binding.id: geo.frame(in: .named("extension-icon-rail"))]
+                                )
                             }
                         }
-                        .gesture(itemDragGesture(for: binding.id))
+                    }
+                    .gesture(itemDragGesture(for: binding.id))
                 }
             }
             .frame(maxWidth: .infinity)
@@ -43,6 +52,7 @@ struct ExtensionTopbarRail: View {
         .onChange(of: extensionStore.topbarItems) { _, items in
             persistFirstSeenIDs()
             guard let draggedID, !items.contains(where: { $0.id == draggedID }) else { return }
+            persistLiveOrder()
             cancelDrag()
         }
     }
@@ -54,16 +64,24 @@ struct ExtensionTopbarRail: View {
         )
     }
 
+    private func persistLiveOrder() {
+        guard liveOrderIDs != nil else { return }
+        let liveIDs = displayedItems.map(\.id)
+        orderStore.ids = ExtensionTopbarRailOrder.applyingLiveOrder(liveIDs, to: orderStore.ids)
+    }
+
     private func itemDragGesture(for id: String) -> some Gesture {
         DragGesture(minimumDistance: 6, coordinateSpace: .named("extension-icon-rail"))
             .onChanged { value in
                 if draggedID == nil {
                     draggedID = id
                     lastReorderTargetID = nil
+                    liveOrderIDs = displayedItems.map(\.id)
                 }
                 reorderIfNeeded(at: value.location)
             }
             .onEnded { _ in
+                persistLiveOrder()
                 withAnimation(.easeInOut(duration: 0.15)) {
                     cancelDrag()
                 }
@@ -72,10 +90,7 @@ struct ExtensionTopbarRail: View {
 
     private func reorderIfNeeded(at location: CGPoint) {
         guard let draggedID else { return }
-        let displayedIDs = ExtensionTopbarRailOrder.displayed(
-            visible: extensionStore.topbarItems,
-            savedIDs: orderStore.ids
-        ).map(\.id)
+        let displayedIDs = displayedItems.map(\.id)
         var hoveredTargetID: String?
 
         for (id, frame) in frames where id != draggedID {
@@ -87,11 +102,11 @@ struct ExtensionTopbarRail: View {
             else { return }
 
             lastReorderTargetID = id
-            var liveIDs = displayedIDs
-            liveIDs.remove(at: sourceIndex)
-            liveIDs.insert(draggedID, at: destIndex)
+            var nextLiveIDs = displayedIDs
+            nextLiveIDs.remove(at: sourceIndex)
+            nextLiveIDs.insert(draggedID, at: destIndex)
             withAnimation(.easeInOut(duration: 0.15)) {
-                orderStore.ids = ExtensionTopbarRailOrder.applyingLiveOrder(liveIDs, to: orderStore.ids)
+                liveOrderIDs = nextLiveIDs
             }
             return
         }
@@ -103,6 +118,7 @@ struct ExtensionTopbarRail: View {
 
     private func cancelDrag() {
         draggedID = nil
+        liveOrderIDs = nil
         frames = [:]
         lastReorderTargetID = nil
     }

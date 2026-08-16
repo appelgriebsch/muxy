@@ -28,8 +28,8 @@ drive the same verbs the `muxy` CLI exposes.
    the built `dist/` folder, so run `npm run build` (and **Reload**) to see
    changes in the app.
 3. Click **Reload** in the Extensions modal, then press **⌘⇧H** (or use the
-   topbar **sparkles** icon). The **Hello** panel toggles — that's your extension
-   running.
+   sparkles icon in the title bar or the right-hand extension rail, if enabled).
+   The **Hello** panel toggles — that's your extension running.
 
 Dev extensions show a **DEV** badge. Edit the source, then **Reload** to see
 changes. **Remove from Muxy** on the detail page unloads it without touching your

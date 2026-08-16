@@ -21,8 +21,6 @@ struct ExtensionIconView: View {
     private func symbolImage(_ name: String) -> some View {
         Image(systemName: name)
             .font(.system(size: glyphSize, weight: weight))
-            .imageScale(.medium)
-            .frame(width: glyphSize, height: glyphSize)
     }
 
     @ViewBuilder
