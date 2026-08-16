@@ -1255,8 +1255,15 @@ struct MainWindow: View {
                     .frame(height: UIMetrics.titleBarHeight)
                     .background(WindowDragRepresentable())
             }
-            ExtensionTopbarRail()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack(spacing: 0) {
+                if !isFullScreen {
+                    Color.clear
+                        .frame(height: 1)
+                        .accessibilityHidden(true)
+                }
+                ExtensionTopbarRail()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
         .frame(width: UIMetrics.sidebarCollapsedWidth)
         .background(AppSidebarBackground(

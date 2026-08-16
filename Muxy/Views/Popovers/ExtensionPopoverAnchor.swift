@@ -90,8 +90,9 @@ final class ExtensionPopoverCoordinator: NSObject, NSPopoverDelegate {
         let popover = NSPopover()
         popover.behavior = .semitransient
         popover.delegate = self
-        popover.contentViewController = makeContentController(for: state)
-        popover.contentSize = contentSize(for: state)
+        let size = contentSize(for: state)
+        popover.contentViewController = makeContentController(for: state, size: size)
+        popover.contentSize = size
         popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: preferredEdge)
 
         self.popover = popover
@@ -110,14 +111,28 @@ final class ExtensionPopoverCoordinator: NSObject, NSPopoverDelegate {
         let size = contentSize(for: state)
         guard popover?.contentSize != size else { return }
         popover?.contentSize = size
+        (popover?.contentViewController as? NSHostingController<AnyView>)?.rootView = hostedRootView(
+            for: state,
+            size: size
+        )
     }
 
-    private func makeContentController(for state: ExtensionPopoverState) -> NSViewController {
-        let content = ExtensionPopoverView(state: state)
-            .environment(appState)
-            .environment(projectStore)
-            .environment(worktreeStore)
-        return NSHostingController(rootView: content)
+    private func makeContentController(
+        for state: ExtensionPopoverState,
+        size: NSSize
+    ) -> NSHostingController<AnyView> {
+        let controller = NSHostingController(rootView: hostedRootView(for: state, size: size))
+        controller.preferredContentSize = size
+        return controller
+    }
+
+    private func hostedRootView(for state: ExtensionPopoverState, size: NSSize) -> AnyView {
+        AnyView(
+            ExtensionPopoverView(state: state, size: size)
+                .environment(appState)
+                .environment(projectStore)
+                .environment(worktreeStore)
+        )
     }
 
     private func contentSize(for state: ExtensionPopoverState) -> NSSize {

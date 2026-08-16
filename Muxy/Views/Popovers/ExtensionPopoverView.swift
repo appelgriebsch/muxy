@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ExtensionPopoverView: View {
     let state: ExtensionPopoverState
+    var size: CGSize?
 
     @Environment(AppState.self) private var appState
     @Environment(ProjectStore.self) private var projectStore
@@ -30,7 +31,10 @@ struct ExtensionPopoverView: View {
                 Color.clear
             }
         }
-        .frame(width: state.width, height: state.height)
+        .frame(
+            width: size?.width ?? state.width,
+            height: size?.height ?? state.height
+        )
     }
 }
 
