@@ -6,7 +6,7 @@ struct ExtensionTopbarRail: View {
     @State private var draggedID: String?
     @State private var liveOrderIDs: [String]?
     @State private var frames: [String: CGRect] = [:]
-    @State private var lastReorderTargetID: String?
+    @GestureState private var isDragging = false
 
     private var displayedItems: [ExtensionStore.TopbarItemBinding] {
         ExtensionTopbarRailOrder.displayed(
@@ -26,34 +26,82 @@ struct ExtensionTopbarRail: View {
                         isCommandEnabled: draggedID == nil,
                         showsSelectionChrome: true
                     )
-                    .fixedSize()
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .background {
-                        if draggedID != nil {
-                            GeometryReader { geo in
-                                Color.clear.preference(
-                                    key: StringFramePreferenceKey<ExtensionIconRailFrameTag>.self,
-                                    value: [binding.id: geo.frame(in: .named("extension-icon-rail"))]
-                                )
-                            }
+                        GeometryReader { geo in
+                            Color.clear.preference(
+                                key: StringFramePreferenceKey<ExtensionIconRailFrameTag>.self,
+                                value: [binding.id: geo.frame(in: .named("extension-icon-rail"))]
+                            )
                         }
                     }
-                    .gesture(itemDragGesture(for: binding.id))
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, UIMetrics.spacing2)
+            .contentShape(Rectangle())
+            .highPriorityGesture(railDragGesture)
             .onPreferenceChange(StringFramePreferenceKey<ExtensionIconRailFrameTag>.self) { nextFrames in
-                guard draggedID != nil else { return }
                 frames = nextFrames
             }
         }
         .coordinateSpace(name: "extension-icon-rail")
+        .scrollDisabled(draggedID != nil)
         .onAppear(perform: persistFirstSeenIDs)
+        .onDisappear(perform: finishDrag)
+        .onChange(of: isDragging) { _, dragging in
+            guard !dragging else { return }
+            finishDrag()
+        }
         .onChange(of: extensionStore.topbarItems) { _, items in
             persistFirstSeenIDs()
             guard let draggedID, !items.contains(where: { $0.id == draggedID }) else { return }
-            persistLiveOrder()
-            cancelDrag()
+            finishDrag()
+        }
+    }
+
+    private var railDragGesture: some Gesture {
+        DragGesture(minimumDistance: 6, coordinateSpace: .named("extension-icon-rail"))
+            .updating($isDragging) { _, state, _ in
+                state = true
+            }
+            .onChanged(handleDragChanged)
+            .onEnded { _ in
+                finishDrag()
+            }
+    }
+
+    private func handleDragChanged(_ value: DragGesture.Value) {
+        let currentDraggedID: String
+        let currentLiveIDs: [String]
+        if let draggedID, let liveOrderIDs {
+            currentDraggedID = draggedID
+            currentLiveIDs = liveOrderIDs
+        } else {
+            guard let hitID = itemID(at: value.startLocation) else { return }
+            let snapshot = displayedItems.map(\.id)
+            draggedID = hitID
+            liveOrderIDs = snapshot
+            currentDraggedID = hitID
+            currentLiveIDs = snapshot
+        }
+
+        guard let nextIDs = ExtensionTopbarRailReorder.reorderedIDs(
+            liveIDs: currentLiveIDs,
+            frames: frames,
+            draggedID: currentDraggedID,
+            locationY: value.location.y
+        )
+        else { return }
+
+        withAnimation(.easeInOut(duration: 0.15)) {
+            liveOrderIDs = nextIDs
+        }
+    }
+
+    private func itemID(at point: CGPoint) -> String? {
+        displayedItems.map(\.id).first { id in
+            frames[id]?.contains(point) == true
         }
     }
 
@@ -70,56 +118,15 @@ struct ExtensionTopbarRail: View {
         orderStore.ids = ExtensionTopbarRailOrder.applyingLiveOrder(liveIDs, to: orderStore.ids)
     }
 
-    private func itemDragGesture(for id: String) -> some Gesture {
-        DragGesture(minimumDistance: 6, coordinateSpace: .named("extension-icon-rail"))
-            .onChanged { value in
-                if draggedID == nil {
-                    draggedID = id
-                    lastReorderTargetID = nil
-                    liveOrderIDs = displayedItems.map(\.id)
-                }
-                reorderIfNeeded(at: value.location)
-            }
-            .onEnded { _ in
-                persistLiveOrder()
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    cancelDrag()
-                }
-            }
-    }
-
-    private func reorderIfNeeded(at location: CGPoint) {
-        guard let draggedID else { return }
-        let displayedIDs = displayedItems.map(\.id)
-        var hoveredTargetID: String?
-
-        for (id, frame) in frames where id != draggedID {
-            guard frame.contains(location) else { continue }
-            hoveredTargetID = id
-            guard lastReorderTargetID != id else { return }
-            guard let sourceIndex = displayedIDs.firstIndex(of: draggedID),
-                  let destIndex = displayedIDs.firstIndex(of: id)
-            else { return }
-
-            lastReorderTargetID = id
-            var nextLiveIDs = displayedIDs
-            nextLiveIDs.remove(at: sourceIndex)
-            nextLiveIDs.insert(draggedID, at: destIndex)
-            withAnimation(.easeInOut(duration: 0.15)) {
-                liveOrderIDs = nextLiveIDs
-            }
-            return
-        }
-
-        if hoveredTargetID == nil {
-            lastReorderTargetID = nil
+    private func finishDrag() {
+        persistLiveOrder()
+        withAnimation(.easeInOut(duration: 0.15)) {
+            cancelDrag()
         }
     }
 
     private func cancelDrag() {
         draggedID = nil
         liveOrderIDs = nil
-        frames = [:]
-        lastReorderTargetID = nil
     }
 }

@@ -89,6 +89,110 @@ struct ExtensionTopbarRailOrderTests {
     }
 }
 
+@Suite("ExtensionTopbarRailReorder")
+struct ExtensionTopbarRailReorderTests {
+    private let frames: [String: CGRect] = [
+        "A": CGRect(x: 0, y: 0, width: 32, height: 32),
+        "B": CGRect(x: 0, y: 32, width: 32, height: 32),
+        "C": CGRect(x: 0, y: 64, width: 32, height: 32),
+        "D": CGRect(x: 0, y: 96, width: 32, height: 32),
+    ]
+
+    @Test("swaps with the adjacent item below")
+    func adjacentSwapDown() {
+        #expect(
+            ExtensionTopbarRailReorder.reorderedIDs(
+                liveIDs: ["A", "B", "C"],
+                frames: frames,
+                draggedID: "A",
+                locationY: 49
+            ) == ["B", "A", "C"]
+        )
+    }
+
+    @Test("swaps with the adjacent item above")
+    func adjacentSwapUp() {
+        #expect(
+            ExtensionTopbarRailReorder.reorderedIDs(
+                liveIDs: ["A", "B", "C"],
+                frames: frames,
+                draggedID: "C",
+                locationY: 47
+            ) == ["A", "C", "B"]
+        )
+    }
+
+    @Test("skips over a middle item")
+    func skipOverMiddle() {
+        #expect(
+            ExtensionTopbarRailReorder.reorderedIDs(
+                liveIDs: ["A", "B", "C"],
+                frames: frames,
+                draggedID: "A",
+                locationY: 81
+            ) == ["B", "C", "A"]
+        )
+    }
+
+    @Test("moves to first and last")
+    func moveToFirstAndLast() {
+        #expect(
+            ExtensionTopbarRailReorder.reorderedIDs(
+                liveIDs: ["A", "B", "C"],
+                frames: frames,
+                draggedID: "C",
+                locationY: 15
+            ) == ["C", "A", "B"]
+        )
+        #expect(
+            ExtensionTopbarRailReorder.reorderedIDs(
+                liveIDs: ["A", "B", "C"],
+                frames: frames,
+                draggedID: "A",
+                locationY: 113
+            ) == ["B", "C", "A"]
+        )
+    }
+
+    @Test("returns nil when the insertion index is unchanged")
+    func sameIndexNoOp() {
+        #expect(
+            ExtensionTopbarRailReorder.reorderedIDs(
+                liveIDs: ["A", "B", "C"],
+                frames: frames,
+                draggedID: "B",
+                locationY: 48
+            ) == nil
+        )
+    }
+
+    @Test("ignores other IDs that have no frame")
+    func missingFrameIgnored() {
+        var partial = frames
+        partial.removeValue(forKey: "B")
+        #expect(
+            ExtensionTopbarRailReorder.reorderedIDs(
+                liveIDs: ["A", "B", "C"],
+                frames: partial,
+                draggedID: "A",
+                locationY: 81
+            ) == ["B", "A", "C"]
+        )
+    }
+
+    @Test("returns nil for an unknown dragged ID")
+    func unknownDraggedID() {
+        #expect(
+            ExtensionTopbarRailReorder.reorderedIDs(
+                liveIDs: ["A", "B", "C"],
+                frames: frames,
+                draggedID: "Z",
+                locationY: 48
+            ) == nil
+        )
+    }
+}
+
 @Suite("ExtensionTopbarRailOrderStore", .serialized)
 @MainActor
 struct ExtensionTopbarRailOrderStoreTests {
