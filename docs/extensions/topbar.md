@@ -60,7 +60,7 @@ Needs `panels:write`. The override is in-memory for the session; disabling or re
 
 By default, items sit in the window title bar's right-hand cluster. In a single-pane Project Focused workspace they precede the built-in **Split** group. Among themselves they are ordered by extension directory name, then by their order in the `topbarItems` array. Title-bar placement always uses that default order.
 
-Users can turn on **Show Extension Icon Rail** to move those same visible items off the title bar into a full-height icon-only rail on the right. The rail hides when no items are visible. Rail order is user-persisted as `extensionID:itemID`; new items append, and hidden items keep their saved slot (drag-reorder lands in a follow-up). The `muxy.topbar.*` API names stay the same.
+Users can turn on **Show Extension Icon Rail** to move those same visible items off the title bar into a full-height icon-only rail on the right. The rail hides when no items are visible. Rail order is the persisted `extensionID:itemID` list; new items append, and hidden items keep their saved slot and restore into it. Drag-reorder on the rail writes that list. Title-bar placement ignores this list and keeps the default directory-then-manifest order. The `muxy.topbar.*` API names stay the same.
 
 ## Limits
 

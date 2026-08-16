@@ -1254,6 +1254,7 @@ struct MainWindow: View {
                 Color.clear
                     .frame(height: UIMetrics.titleBarHeight)
                     .background(WindowDragRepresentable())
+                    .background(MuxyTheme.bg)
             }
             VStack(spacing: 0) {
                 if !isFullScreen {
@@ -1264,12 +1265,11 @@ struct MainWindow: View {
                 ExtensionTopbarRail()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: UIMetrics.sidebarCollapsedWidth)
-        .background(AppSidebarBackground(
-            style: appBackgroundStyle,
-            isFullScreen: isFullScreen
-        ))
+        .frame(width: UIMetrics.extensionIconRailWidth)
+        .clipped()
+        .background(MuxyTheme.bg)
         .overlay(alignment: .leading) {
             Rectangle().fill(MuxyTheme.border)
                 .frame(width: 1)
@@ -1281,7 +1281,7 @@ struct MainWindow: View {
     private var toastEdgePadding: EdgeInsets {
         let big = UIMetrics.scaled(40)
         let small = UIMetrics.spacing7
-        let trailing = showsExtensionTopbarRail ? small + UIMetrics.sidebarCollapsedWidth : small
+        let trailing = showsExtensionTopbarRail ? small + UIMetrics.extensionIconRailWidth : small
         return switch toastPosition {
         case .topCenter: EdgeInsets(top: big, leading: 0, bottom: 0, trailing: 0)
         case .topRight: EdgeInsets(top: big, leading: 0, bottom: 0, trailing: trailing)

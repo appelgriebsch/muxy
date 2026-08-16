@@ -6,6 +6,7 @@ struct ExtensionIconButton: View {
     var size: CGFloat = 13
     var color: Color = MuxyTheme.fgMuted
     var hoverColor: Color = MuxyTheme.fg
+    var isEnabled = true
     let accessibilityLabel: String
     let action: () -> Void
 
@@ -13,6 +14,7 @@ struct ExtensionIconButton: View {
         IconButtonChrome(
             color: color,
             hoverColor: hoverColor,
+            isEnabled: isEnabled,
             accessibilityLabel: accessibilityLabel,
             action: action
         ) {

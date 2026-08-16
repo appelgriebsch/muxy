@@ -88,6 +88,7 @@ struct ModelCoverageTests {
         #expect(UIMetrics.radiusLG == 8)
         #expect(UIMetrics.radiusXL == 10)
         #expect(UIMetrics.sidebarCollapsedWidth == 44)
+        #expect(UIMetrics.extensionIconRailWidth == UIMetrics.titleBarHeight)
         #expect(UIMetrics.sidebarExpandedWidth == 220)
         #expect(UIMetrics.tabBarHeight == 28)
         #expect(UIMetrics.headerHeight == 36)

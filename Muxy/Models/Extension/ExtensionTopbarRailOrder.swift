@@ -41,31 +41,22 @@ enum ExtensionTopbarRailOrder {
         var seenLive = Set<String>()
         let uniqueLive = liveIDs.filter { seenLive.insert($0).inserted }
         let liveSet = Set(uniqueLive)
-        var liveIndex = uniqueLive.startIndex
-        var used = Set<String>()
-        var result: [String] = []
-        result.reserveCapacity(savedIDs.count + uniqueLive.count)
 
-        for id in savedIDs {
-            if used.contains(id) {
-                continue
-            }
-            if liveSet.contains(id) {
-                guard liveIndex < uniqueLive.endIndex else { continue }
-                let next = uniqueLive[liveIndex]
-                uniqueLive.formIndex(after: &liveIndex)
-                used.insert(next)
-                result.append(next)
-                continue
-            }
-            used.insert(id)
-            result.append(id)
+        var seenSaved = Set<String>()
+        var result = savedIDs.filter { seenSaved.insert($0).inserted }
+        let visibleSlots = result.indices.filter { liveSet.contains(result[$0]) }
+
+        var liveIndex = uniqueLive.startIndex
+        for slot in visibleSlots {
+            guard liveIndex < uniqueLive.endIndex else { break }
+            result[slot] = uniqueLive[liveIndex]
+            uniqueLive.formIndex(after: &liveIndex)
         }
 
         while liveIndex < uniqueLive.endIndex {
             let next = uniqueLive[liveIndex]
             uniqueLive.formIndex(after: &liveIndex)
-            if used.insert(next).inserted {
+            if seenSaved.insert(next).inserted {
                 result.append(next)
             }
         }
