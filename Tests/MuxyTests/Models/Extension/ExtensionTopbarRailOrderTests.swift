@@ -61,6 +61,11 @@ struct ExtensionTopbarRailOrderTests {
             ExtensionTopbarRailOrder.applyingLiveOrder(["D", "B", "A"], to: ["A", "B", "C", "D"])
                 == ["D", "B", "C", "A"]
         )
+        #expect(
+            ExtensionTopbarRailOrder.applyingLiveOrder(["B", "A"], to: ["A", "B", "C"])
+                == ["B", "A", "C"]
+        )
+        #expect(ExtensionTopbarRailOrder.applyingLiveOrder([], to: ["A", "B", "C"]) == ["A", "B", "C"])
     }
 
     @Test("ignores unknown saved IDs")
