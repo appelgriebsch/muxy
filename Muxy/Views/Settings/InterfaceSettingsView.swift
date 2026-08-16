@@ -17,6 +17,8 @@ struct InterfaceSettingsView: View {
     private var appBlurIntensity = AppTransparencyPreferences.defaultBlurIntensity
     @AppStorage(TopbarPreferences.actionsVisibleKey)
     private var showTopbarActions = TopbarPreferences.defaultActionsVisible
+    @AppStorage(TopbarPreferences.railVisibleKey)
+    private var showExtensionIconRail = TopbarPreferences.defaultRailVisible
     @AppStorage("muxy.showStatusBar") private var showStatusBar = true
     @AppStorage(ResourceUsagePreferences.visibleKey) private var showResourceUsage = ResourceUsagePreferences.defaultVisible
     @State private var layoutStore = AppLayoutStore.shared
@@ -171,6 +173,8 @@ struct InterfaceSettingsView: View {
                 TabHeaderWidthSettingRow()
 
                 SettingsToggleRow(label: L10n.resource("Show Top Bar Actions"), isOn: $showTopbarActions)
+
+                SettingsToggleRow(label: L10n.resource("Show Extension Icon Rail"), isOn: $showExtensionIconRail)
 
                 SettingsToggleRow(label: L10n.resource("Show Status Bar"), isOn: $showStatusBar)
 
