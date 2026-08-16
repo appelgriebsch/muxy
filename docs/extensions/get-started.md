@@ -14,7 +14,7 @@ drive the same verbs the `muxy` CLI exposes.
 1. In Muxy, open the **Extensions** modal → **Create**, pick a folder, and name
    it `my-extension`. Muxy scaffolds the
    [`vanilla`](https://github.com/muxy-app/muxy/tree/main/Muxy/Resources/starter-kits/vanilla)
-   starter kit (a Hello panel, a topbar icon, and a command) and loads it as a
+   starter kit (a Hello panel, a command icon in the title bar or optional right rail, and a command) and loads it as a
    dev extension automatically.
 2. Build it so Muxy has a `dist/` to read:
 

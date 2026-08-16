@@ -6,6 +6,7 @@ struct ExtensionPopoverAnchor: NSViewRepresentable {
     let state: ExtensionPopoverState?
     let width: Double?
     let height: Double?
+    var preferredEdge: NSRectEdge = .maxY
 
     @Environment(AppState.self) private var appState
     @Environment(ProjectStore.self) private var projectStore
@@ -15,6 +16,7 @@ struct ExtensionPopoverAnchor: NSViewRepresentable {
         ExtensionPopoverCoordinator(
             anchorID: anchorID,
             host: host,
+            preferredEdge: preferredEdge,
             appState: appState,
             projectStore: projectStore,
             worktreeStore: worktreeStore
@@ -40,6 +42,7 @@ struct ExtensionPopoverAnchor: NSViewRepresentable {
 final class ExtensionPopoverCoordinator: NSObject, NSPopoverDelegate {
     private let anchorID: String
     private let host: PopoverHost
+    private let preferredEdge: NSRectEdge
     private let appState: AppState
     private let projectStore: ProjectStore?
     private let worktreeStore: WorktreeStore?
@@ -51,12 +54,14 @@ final class ExtensionPopoverCoordinator: NSObject, NSPopoverDelegate {
     init(
         anchorID: String,
         host: PopoverHost,
+        preferredEdge: NSRectEdge,
         appState: AppState,
         projectStore: ProjectStore?,
         worktreeStore: WorktreeStore?
     ) {
         self.anchorID = anchorID
         self.host = host
+        self.preferredEdge = preferredEdge
         self.appState = appState
         self.projectStore = projectStore
         self.worktreeStore = worktreeStore
@@ -87,7 +92,7 @@ final class ExtensionPopoverCoordinator: NSObject, NSPopoverDelegate {
         popover.delegate = self
         popover.contentViewController = makeContentController(for: state)
         popover.contentSize = contentSize(for: state)
-        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .maxY)
+        popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: preferredEdge)
 
         self.popover = popover
         presentedStateID = state.id
@@ -116,7 +121,20 @@ final class ExtensionPopoverCoordinator: NSObject, NSPopoverDelegate {
     }
 
     private func contentSize(for state: ExtensionPopoverState) -> NSSize {
-        NSSize(width: state.width, height: state.height)
+        let remaining = remainingSpace()
+        return ExtensionPopoverLayout.clampedContentSize(
+            width: state.width,
+            height: state.height,
+            remainingOnEdge: remaining
+        )
+    }
+
+    private func remainingSpace() -> CGSize? {
+        guard let window = anchorView?.window else { return nil }
+        return ExtensionPopoverLayout.remainingSpace(
+            preferredEdge: preferredEdge,
+            windowSize: window.frame.size
+        )
     }
 
     func popoverDidClose(_: Notification) {

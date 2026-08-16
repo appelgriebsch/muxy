@@ -1,6 +1,6 @@
 # Muxy Starter — Vanilla JS + Tailwind
 
-A minimal Muxy extension in plain JavaScript with [Tailwind CSS](https://tailwindcss.com) and Vite. It adds a pinned **Hello** panel, a topbar icon, and a palette command (`cmd+shift+h`) that toggles the panel. The panel header's refresh button fires `command.refresh-hello`, which the panel listens for.
+A minimal Muxy extension in plain JavaScript with [Tailwind CSS](https://tailwindcss.com) and Vite. It adds a pinned **Hello** panel, a command icon in the title bar or optional right rail, and a palette command (`cmd+shift+h`) that toggles the panel. The panel header's refresh button fires `command.refresh-hello`, which the panel listens for.
 
 ```bash
 npm install

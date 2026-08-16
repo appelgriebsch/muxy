@@ -23,7 +23,7 @@ At most **one extension popover is open at a time** — opening another anchor's
 }
 ```
 
-A popover is always reached through a topbar/status bar item whose `command` resolves to an `openPopover` action, and it anchors to that exact item. There is no `open` verb — popovers are user-triggered, and the background script does not drive them.
+A popover is always reached through a topbar/status bar item whose `command` resolves to an `openPopover` action, and it anchors to that item's **current** chrome (title bar, optional right rail, or status bar). The host picks the preferred edge; pages must not assume a dropdown below the title bar. There is no `open` verb — popovers are user-triggered, and the background script does not drive them.
 
 ### Fields
 
@@ -38,7 +38,7 @@ A popover is always reached through a topbar/status bar item whose `command` res
 
 ## Sizing and closing
 
-From the popover page, with `panels:write`, you can resize the popover to fit its content and close it. Both act on the popover currently open for the calling extension; the host clamps the reported size to a sane range. The `popover` API exists only on webview pages — it is not available to the background script or [`runScript`](scripts.md) commands.
+From the popover page, with `panels:write`, you can resize the popover to fit its content and close it. Both act on the popover currently open for the calling extension; the host clamps the reported size to a sane range and may shrink it further to the remaining space on the chosen edge. The `popover` API exists only on webview pages — it is not available to the background script or [`runScript`](scripts.md) commands.
 
 ```ts
 window.muxy.popover.resize(width, height): Promise<void>;

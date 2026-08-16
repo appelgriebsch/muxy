@@ -1,6 +1,19 @@
 import SwiftUI
 
 struct ExtensionTopbarItems: View {
+    @Environment(ExtensionStore.self) private var extensionStore
+
+    var body: some View {
+        ForEach(extensionStore.topbarItems) { binding in
+            ExtensionTopbarItemControl(binding: binding, preferredEdge: .maxY)
+        }
+    }
+}
+
+struct ExtensionTopbarItemControl: View {
+    let binding: ExtensionStore.TopbarItemBinding
+    var preferredEdge: NSRectEdge = .maxY
+
     @Environment(AppState.self) private var appState
     @Environment(ProjectStore.self) private var projectStore
     @Environment(WorktreeStore.self) private var worktreeStore
@@ -10,19 +23,17 @@ struct ExtensionTopbarItems: View {
     @State private var popoverHost = PopoverHost.shared
 
     var body: some View {
-        ForEach(extensionStore.topbarItems) { binding in
-            ExtensionIconButton(
-                icon: binding.displayIcon,
-                muxyExtension: binding.muxyExtension,
-                accessibilityLabel: binding.item.tooltip ?? binding.item.id,
-                action: { triggerCommand(binding: binding) }
-            )
-            .help(binding.item.tooltip ?? binding.item.id)
-            .extensionPopover(anchorID: binding.id, host: popoverHost)
-        }
+        ExtensionIconButton(
+            icon: binding.displayIcon,
+            muxyExtension: binding.muxyExtension,
+            accessibilityLabel: binding.item.tooltip ?? binding.item.id,
+            action: { triggerCommand() }
+        )
+        .help(binding.item.tooltip ?? binding.item.id)
+        .extensionPopover(anchorID: binding.id, host: popoverHost, preferredEdge: preferredEdge)
     }
 
-    private func triggerCommand(binding: ExtensionStore.TopbarItemBinding) {
+    private func triggerCommand() {
         if let popover = extensionStore.popover(for: binding.muxyExtension, command: binding.item.command) {
             popoverHost.toggle(
                 anchorID: binding.id,
