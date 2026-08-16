@@ -161,6 +161,8 @@ struct MainWindow: View {
     @AppStorage(SidebarSelection.storageKey) private var activeSidebarRaw = SidebarSelection.builtinValue
     @AppStorage(TopbarPreferences.actionsVisibleKey)
     private var showTopbarActions = TopbarPreferences.defaultActionsVisible
+    @AppStorage(TopbarPreferences.railVisibleKey)
+    private var showExtensionIconRail = TopbarPreferences.defaultRailVisible
     @AppStorage("muxy.showStatusBar") private var showStatusBar = true
     @AppStorage(HomeProjectPreferences.visibleKey) private var showHomeProject = HomeProjectPreferences.defaultVisible
     @AppStorage("muxy.extensionOutputSelected") private var extensionOutputSelectedStored = ""
@@ -215,9 +217,13 @@ struct MainWindow: View {
         HStack(spacing: 0) {
             sidebarColumn
             mainWorkspaceColumn
+            if showsExtensionTopbarRail {
+                extensionTopbarRailColumn
+            }
         }
         .animation(.easeInOut(duration: 0.2), value: sidebarExpanded)
         .animation(.easeInOut(duration: 0.2), value: layoutStore.layout)
+        .animation(.easeInOut(duration: 0.2), value: showsExtensionTopbarRail)
     }
 
     private var windowOverlays: MainWindowOverlays {
@@ -740,7 +746,9 @@ struct MainWindow: View {
             if let project = activeProject {
                 LayoutPickerMenu(projectID: project.id)
             }
-            ExtensionTopbarItems()
+            if !showExtensionIconRail {
+                ExtensionTopbarItems()
+            }
             if let project = activeProject,
                let key = appState.activeWorktreeKey(for: project.id),
                let focusedAreaID = appState.focusedAreaID[key]
@@ -1236,14 +1244,49 @@ struct MainWindow: View {
         }
     }
 
+    private var showsExtensionTopbarRail: Bool {
+        showExtensionIconRail && !extensionStore.topbarItems.isEmpty
+    }
+
+    private var extensionTopbarRailColumn: some View {
+        VStack(spacing: 0) {
+            if !isFullScreen {
+                Color.clear
+                    .frame(height: UIMetrics.titleBarHeight)
+                    .background(WindowDragRepresentable())
+                    .background(MuxyTheme.bg)
+            }
+            VStack(spacing: 0) {
+                if !isFullScreen {
+                    Color.clear
+                        .frame(height: 1)
+                        .accessibilityHidden(true)
+                }
+                ExtensionTopbarRail()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(width: UIMetrics.extensionIconRailWidth)
+        .clipped()
+        .background(MuxyTheme.bg)
+        .overlay(alignment: .leading) {
+            Rectangle().fill(MuxyTheme.border)
+                .frame(width: 1)
+                .accessibilityHidden(true)
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
     private var toastEdgePadding: EdgeInsets {
         let big = UIMetrics.scaled(40)
         let small = UIMetrics.spacing7
+        let trailing = showsExtensionTopbarRail ? small + UIMetrics.extensionIconRailWidth : small
         return switch toastPosition {
         case .topCenter: EdgeInsets(top: big, leading: 0, bottom: 0, trailing: 0)
-        case .topRight: EdgeInsets(top: big, leading: 0, bottom: 0, trailing: small)
+        case .topRight: EdgeInsets(top: big, leading: 0, bottom: 0, trailing: trailing)
         case .bottomCenter: EdgeInsets(top: 0, leading: 0, bottom: small, trailing: 0)
-        case .bottomRight: EdgeInsets(top: 0, leading: 0, bottom: small, trailing: small)
+        case .bottomRight: EdgeInsets(top: 0, leading: 0, bottom: small, trailing: trailing)
         }
     }
 

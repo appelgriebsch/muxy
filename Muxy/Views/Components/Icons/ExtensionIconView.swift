@@ -10,11 +10,17 @@ struct ExtensionIconView: View {
     var body: some View {
         switch icon {
         case let .symbol(name):
-            Image(systemName: name)
-                .font(.system(size: UIMetrics.scaled(size), weight: weight))
+            symbolImage(name)
         case let .svg(path):
             svgImage(path: path)
         }
+    }
+
+    private var glyphSize: CGFloat { UIMetrics.scaled(size) }
+
+    private func symbolImage(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.system(size: glyphSize, weight: weight))
     }
 
     @ViewBuilder
@@ -26,10 +32,9 @@ struct ExtensionIconView: View {
                 .resizable()
                 .renderingMode(.template)
                 .aspectRatio(contentMode: .fit)
-                .frame(width: UIMetrics.scaled(size), height: UIMetrics.scaled(size))
+                .frame(width: glyphSize, height: glyphSize)
         } else {
-            Image(systemName: "puzzlepiece.extension")
-                .font(.system(size: UIMetrics.scaled(size), weight: weight))
+            symbolImage("puzzlepiece.extension")
         }
     }
 }
