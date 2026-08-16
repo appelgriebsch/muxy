@@ -67,7 +67,7 @@ final class PanelHost {
 
     func move(_ panelID: String, to position: PanelPosition) {
         guard let current = placement(for: panelID) else { return }
-        open(panelID, at: position, mode: current.mode)
+        open(panelID, at: position, mode: current.mode, usesPreferredMode: false)
     }
 
     func setMode(_ mode: PanelMode, for panelID: String) {

@@ -271,6 +271,9 @@ final class DefaultProfilerRecorder: ProfilerRecording, @unchecked Sendable {
         timer = scheduler.scheduleOnce(after: samplingInterval) { [weak self] in
             self?.startOnQueue()
         }
-        profilerLogger.error("Profiler will retry after a sampling or write failure: \(error.localizedDescription, privacy: .public)")
+        let nsError = error as NSError
+        profilerLogger.error(
+            "Profiler will retry after a sampling or write failure: \(nsError.domain, privacy: .public) \(nsError.code)"
+        )
     }
 }

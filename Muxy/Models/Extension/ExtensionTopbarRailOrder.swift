@@ -53,12 +53,8 @@ enum ExtensionTopbarRailOrder {
             uniqueLive.formIndex(after: &liveIndex)
         }
 
-        while liveIndex < uniqueLive.endIndex {
-            let next = uniqueLive[liveIndex]
-            uniqueLive.formIndex(after: &liveIndex)
-            if seenSaved.insert(next).inserted {
-                result.append(next)
-            }
+        if liveIndex < uniqueLive.endIndex {
+            result.append(contentsOf: uniqueLive[liveIndex...])
         }
 
         return result

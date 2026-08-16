@@ -68,6 +68,14 @@ struct ExtensionTopbarRailOrderTests {
         #expect(ExtensionTopbarRailOrder.applyingLiveOrder([], to: ["A", "B", "C"]) == ["A", "B", "C"])
     }
 
+    @Test("appends a new live ID that precedes a persisted live ID")
+    func appendsNewLiveIDPrecedingPersistedLiveID() {
+        #expect(
+            ExtensionTopbarRailOrder.applyingLiveOrder(["C", "A"], to: ["A", "B"])
+                == ["C", "B", "A"]
+        )
+    }
+
     @Test("ignores unknown saved IDs")
     func ignoresUnknownSavedIDs() {
         let visible = [Item(id: "A"), Item(id: "B")]

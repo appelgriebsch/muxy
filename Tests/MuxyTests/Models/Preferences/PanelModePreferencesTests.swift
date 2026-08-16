@@ -32,6 +32,22 @@ struct PanelModePreferencesTests {
         #expect(fixedModeHost.placement(for: "ext:files:files")?.mode == .pinned)
     }
 
+    @Test("move keeps the current mode instead of the persisted preference")
+    func moveKeepsCurrentModeWhenPreferenceDiffers() throws {
+        let suiteName = "PanelModePreferencesTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let preferences = PanelModePreferences(defaults: defaults)
+        preferences.setMode(.floating, for: "ext:files:files")
+        let host = PanelHost(modePreferences: preferences)
+
+        host.open("ext:files:files", at: .right, mode: .pinned, usesPreferredMode: false)
+        host.move("ext:files:files", to: .bottom)
+
+        #expect(host.placement(for: "ext:files:files")?.position == .bottom)
+        #expect(host.placement(for: "ext:files:files")?.mode == .pinned)
+    }
+
     @Test("migrates the legacy Rich Input floating preference")
     func migratesLegacyRichInputPreference() throws {
         let suiteName = "PanelModePreferencesTests-\(UUID().uuidString)"

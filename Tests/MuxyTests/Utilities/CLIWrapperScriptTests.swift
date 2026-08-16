@@ -158,8 +158,9 @@ struct CLIWrapperScriptTests {
         #expect(command.contains("/usr/bin/printf '%s' \(ShellEscaper.quote(expected))"))
         #expect(command.contains("/usr/bin/cmp -s \"$expected\" /usr/local/bin/muxy"))
         #expect(command.contains("/bin/chmod 755"))
-        #expect(command.contains("/bin/mv -f"))
-        #expect(command.contains("/bin/rm -f"))
+        #expect(command.contains(
+            "/bin/mv -f \"$temp\" /usr/local/bin/muxy; [ -z \"$expected\" ] || /bin/rm -f \"$expected\"; trap - EXIT HUP INT TERM"
+        ))
     }
 
     @Test("manual privileged installation does not require an existing wrapper")

@@ -62,6 +62,7 @@ struct IconButtonChrome<Label: View>: View {
             }
         )
         .buttonStyle(.plain)
+        .disabled(!isEnabled)
         .onHover { hovering in
             guard isEnabled else {
                 hovered = false

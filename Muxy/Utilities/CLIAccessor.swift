@@ -243,6 +243,7 @@ enum CLIAccessor {
                 + "/usr/bin/cmp -s \"$expected\" /usr/local/bin/muxy; "
         }
         command += "/bin/mv -f \"$temp\" /usr/local/bin/muxy; "
+            + "[ -z \"$expected\" ] || /bin/rm -f \"$expected\"; "
             + "trap - EXIT HUP INT TERM"
         return command
     }
