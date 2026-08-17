@@ -59,4 +59,28 @@ enum ExtensionTopbarRailOrder {
 
         return result
     }
+
+    static func persisting(
+        visibleRailIDs: [String],
+        visibleNonRailIDs: [String],
+        savedIDs: [String]
+    ) -> [String] {
+        let visibleNonRail = Set(visibleNonRailIDs)
+        let pruned = savedIDs.filter { !visibleNonRail.contains($0) }
+        return appendingNewIDs(visibleIDs: visibleRailIDs, savedIDs: pruned)
+    }
+}
+
+enum ExtensionTopbarPlacement {
+    static func railItems(from items: [ExtensionStore.TopbarItemBinding]) -> [ExtensionStore.TopbarItemBinding] {
+        items.filter(\.isRailEligible)
+    }
+
+    static func titleBarItems(
+        from items: [ExtensionStore.TopbarItemBinding],
+        railEnabled: Bool
+    ) -> [ExtensionStore.TopbarItemBinding] {
+        guard railEnabled else { return items }
+        return items.filter { !$0.isRailEligible }
+    }
 }

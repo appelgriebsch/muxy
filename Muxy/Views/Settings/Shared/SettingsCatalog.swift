@@ -420,16 +420,17 @@ enum SettingsCatalog {
         SettingsCatalogItem(
             key: TopbarPreferences.railVisibleKey,
             title: "Show Extension Icon Rail",
-            description: "Shows visible extension topbar icons in a right-hand rail instead of the title bar. Off by default.",
+            description: "Shows visible togglePanel extension icons in a right-hand rail. "
+                + "Other topbar icons stay in the title bar. Off by default.",
             category: .appearance,
             section: "Interface",
             defaultValue: TopbarPreferences.defaultRailVisible,
-            aliases: ["extension rail", "right rail", "topbar icons"]
+            aliases: ["extension rail", "right rail", "topbar icons", "toggle panel", "panel toggle"]
         ),
         SettingsCatalogItem(
             key: TopbarPreferences.railOrderKey,
             title: "Extension icon rail order",
-            description: "Saved order of extension topbar icons on the right-hand rail.",
+            description: "Saved order of visible togglePanel icons on the right-hand rail.",
             category: .appearance,
             section: "Interface",
             defaultValue: TopbarPreferences.defaultRailOrder

@@ -1,6 +1,6 @@
 # Topbar Items
 
-A topbar item is an icon Muxy shows for a declared command. By default it sits in the right-hand cluster of the window title bar, just before the built-in pane and tab controls. Users can move visible items into an optional full-height icon-only right rail. Split-child panes are separated by dividers and do not add another tab strip or another copy of the window topbar. Clicking the item runs one of the extension's declared [commands](palette-commands.md).
+A topbar item is an icon Muxy shows for a declared command. By default it sits in the right-hand cluster of the window title bar, just before the built-in pane and tab controls. Users can move visible `togglePanel` items into an optional full-height icon-only right rail. Split-child panes are separated by dividers and do not add another tab strip or another copy of the window topbar. Clicking the item runs one of the extension's declared [commands](palette-commands.md).
 
 ```json
 {
@@ -60,7 +60,7 @@ Needs `panels:write`. The override is in-memory for the session; disabling or re
 
 By default, items sit in the window title bar's right-hand cluster. In a single-pane Project Focused workspace they precede the built-in **Split** group. Among themselves they are ordered by extension directory name, then by their order in the `topbarItems` array. Title-bar placement always uses that default order.
 
-Users can turn on **Show Extension Icon Rail** to move those same visible items off the title bar into a full-height icon-only rail on the right. The rail hides when no items are visible. Rail order is the persisted `extensionID:itemID` list; new items append, and hidden items keep their saved slot and restore into it. Drag-reorder on the rail writes that list. Title-bar placement ignores this list and keeps the default directory-then-manifest order. The `muxy.topbar.*` API names stay the same.
+Users can turn on **Show Extension Icon Rail** to move visible `togglePanel` items off the title bar into a full-height icon-only rail on the right. Popover and other command icons stay in the title bar. The rail hides when no `togglePanel` items are visible. Rail order is the persisted `extensionID:itemID` list of rail IDs only; IDs that are currently visible as non-rail items are dropped, new rail items append, and hidden `togglePanel` items keep their saved slot and restore into it. Drag-reorder on the rail writes that list. Title-bar placement ignores this list and keeps the default directory-then-manifest order. The `muxy.topbar.*` API names stay the same.
 
 ## Limits
 

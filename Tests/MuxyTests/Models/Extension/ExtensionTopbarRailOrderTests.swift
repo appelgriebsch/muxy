@@ -95,6 +95,87 @@ struct ExtensionTopbarRailOrderTests {
                 == ["A"]
         )
     }
+
+    @Test("persisting drops visible non-rail IDs, keeps hidden rail IDs, and appends first-seen rail IDs")
+    func persistingPrunesVisibleNonRailAndKeepsHiddenRail() {
+        #expect(
+            ExtensionTopbarRailOrder.persisting(
+                visibleRailIDs: ["panelA"],
+                visibleNonRailIDs: ["popover"],
+                savedIDs: ["popover", "panelA", "hiddenPanel"]
+            ) == ["panelA", "hiddenPanel"]
+        )
+        #expect(
+            ExtensionTopbarRailOrder.persisting(
+                visibleRailIDs: ["panelA", "panelB"],
+                visibleNonRailIDs: ["popover"],
+                savedIDs: ["popover", "panelA", "hiddenPanel"]
+            ) == ["panelA", "hiddenPanel", "panelB"]
+        )
+    }
+
+    @Test("persisting after a drag splice still keeps a hidden panel ID")
+    func persistingAfterDragSpliceKeepsHiddenPanel() {
+        #expect(
+            ExtensionTopbarRailOrder.persisting(
+                visibleRailIDs: ["panelA", "panelB"],
+                visibleNonRailIDs: ["popover"],
+                savedIDs: ExtensionTopbarRailOrder.applyingLiveOrder(
+                    ["panelB", "panelA"],
+                    to: ["popover", "panelA", "hiddenPanel"]
+                )
+            ) == ["panelB", "hiddenPanel", "panelA"]
+        )
+    }
+}
+
+@Suite("ExtensionTopbarPlacement")
+struct ExtensionTopbarPlacementTests {
+    @Test("mixed list partitions rail-eligible items")
+    func mixedListPartitions() {
+        let popover = binding(id: "popover", action: .openPopover(popover: "usage"))
+        let panel = binding(id: "panel", action: .togglePanel(panel: "hello"))
+        let event = binding(id: "event", action: .event)
+        let items = [popover, panel, event]
+
+        #expect(ExtensionTopbarPlacement.railItems(from: items).map(\.id) == [panel.id])
+        #expect(
+            ExtensionTopbarPlacement.titleBarItems(from: items, railEnabled: true).map(\.id)
+                == [popover.id, event.id]
+        )
+        #expect(
+            ExtensionTopbarPlacement.titleBarItems(from: items, railEnabled: false).map(\.id)
+                == items.map(\.id)
+        )
+    }
+
+    @Test("title bar keeps togglePanel items when the rail is off")
+    func titleBarKeepsTogglePanelWhenRailOff() {
+        let panel = binding(id: "panel", action: .togglePanel(panel: "hello"))
+        #expect(
+            ExtensionTopbarPlacement.titleBarItems(from: [panel], railEnabled: false).map(\.id)
+                == [panel.id]
+        )
+    }
+
+    private func binding(id: String, action: ExtensionCommandAction) -> ExtensionStore.TopbarItemBinding {
+        let muxyExtension = MuxyExtension(
+            id: "demo",
+            directory: URL(fileURLWithPath: "/tmp/demo"),
+            manifest: ExtensionManifest(
+                name: "demo",
+                version: "1.0.0",
+                background: "background.js",
+                commands: [ExtensionPaletteCommand(id: id, title: id, action: action)]
+            )
+        )
+        return ExtensionStore.TopbarItemBinding(
+            muxyExtension: muxyExtension,
+            item: ExtensionTopbarItem(id: id, icon: .symbol("a"), tooltip: nil, command: id),
+            liveIcon: nil,
+            liveVisible: nil
+        )
+    }
 }
 
 @Suite("ExtensionTopbarRailReorder")

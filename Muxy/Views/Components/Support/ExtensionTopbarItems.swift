@@ -2,17 +2,23 @@ import SwiftUI
 
 struct ExtensionTopbarItems: View {
     @Environment(ExtensionStore.self) private var extensionStore
+    @AppStorage(TopbarPreferences.railVisibleKey)
+    private var showExtensionIconRail = TopbarPreferences.defaultRailVisible
 
     var body: some View {
-        ForEach(extensionStore.topbarItems) { binding in
-            ExtensionTopbarItemControl(binding: binding, preferredEdge: .maxY)
+        ForEach(
+            ExtensionTopbarPlacement.titleBarItems(
+                from: extensionStore.topbarItems,
+                railEnabled: showExtensionIconRail
+            )
+        ) { binding in
+            ExtensionTopbarItemControl(binding: binding)
         }
     }
 }
 
 struct ExtensionTopbarItemControl: View {
     let binding: ExtensionStore.TopbarItemBinding
-    var preferredEdge: NSRectEdge = .maxY
     var isCommandEnabled = true
     var showsSelectionChrome = false
 
@@ -68,7 +74,7 @@ struct ExtensionTopbarItemControl: View {
         .help(binding.item.tooltip ?? binding.item.id)
         .accessibilityValue(isActive ? L10n.string("Active") : "")
         .accessibilityAddTraits(isActive ? .isSelected : [])
-        .extensionPopover(anchorID: binding.id, host: popoverHost, preferredEdge: preferredEdge)
+        .extensionPopover(anchorID: binding.id, host: popoverHost)
     }
 
     private func triggerCommand() {
