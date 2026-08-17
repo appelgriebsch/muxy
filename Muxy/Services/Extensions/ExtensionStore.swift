@@ -468,6 +468,11 @@ final class ExtensionStore {
         var id: String { "\(muxyExtension.id):\(item.id)" }
         var displayIcon: ExtensionIcon { liveIcon ?? item.icon }
         var isVisible: Bool { liveVisible ?? item.visible }
+        var isRailEligible: Bool {
+            guard let command = muxyExtension.manifest.commands.first(where: { $0.id == item.command })
+            else { return false }
+            return command.action.isRailEligible
+        }
     }
 
     struct StatusBarItemBinding: Equatable, Identifiable {
