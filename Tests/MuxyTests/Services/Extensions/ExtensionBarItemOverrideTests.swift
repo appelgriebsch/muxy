@@ -85,6 +85,30 @@ struct ExtensionBarItemOverrideTests {
         #expect(!hidden.visible)
     }
 
+    @Test("togglePanel is rail eligible; other actions and missing commands are not")
+    func railEligibility() {
+        #expect(ExtensionCommandAction.togglePanel(panel: "p").isRailEligible)
+        #expect(!ExtensionCommandAction.openPopover(popover: "p").isRailEligible)
+        #expect(!ExtensionCommandAction.event.isRailEligible)
+        #expect(!ExtensionCommandAction.openTab(tabType: "t", data: nil).isRailEligible)
+        #expect(!ExtensionCommandAction.openModal(
+            ExtensionModalAction(entry: "m.html", width: nil, height: nil, dismissOnOutsideClick: true, data: nil)
+        ).isRailEligible)
+        #expect(!ExtensionCommandAction.runScript(script: "s.js").isRailEligible)
+        #expect(binding(command: "toggle", action: .togglePanel(panel: "p")).isRailEligible)
+        #expect(!binding(command: "popover", action: .openPopover(popover: "p")).isRailEligible)
+        #expect(!binding(command: "event", action: .event).isRailEligible)
+        #expect(!binding(command: "tab", action: .openTab(tabType: "t", data: nil)).isRailEligible)
+        #expect(!binding(
+            command: "modal",
+            action: .openModal(
+                ExtensionModalAction(entry: "m.html", width: nil, height: nil, dismissOnOutsideClick: true, data: nil)
+            )
+        ).isRailEligible)
+        #expect(!binding(command: "script", action: .runScript(script: "s.js")).isRailEligible)
+        #expect(!binding(command: "missing", action: nil).isRailEligible)
+    }
+
     @Test("status bar binding prefers live icon and text over the manifest values")
     func statusBarDisplayFallback() {
         let item = ExtensionStatusBarItem(id: "i", icon: .symbol("a"), text: "1", tooltip: nil, side: .right, command: "c")
@@ -106,6 +130,26 @@ struct ExtensionBarItemOverrideTests {
         #expect(base.displayText == "1")
         #expect(overridden.displayIcon == .symbol("b"))
         #expect(overridden.displayText == "9")
+    }
+
+    private func binding(command: String, action: ExtensionCommandAction?) -> ExtensionStore.TopbarItemBinding {
+        let commands = action.map { [ExtensionPaletteCommand(id: command, title: command, action: $0)] } ?? []
+        let muxyExtension = MuxyExtension(
+            id: "demo",
+            directory: URL(fileURLWithPath: "/tmp/demo"),
+            manifest: ExtensionManifest(
+                name: "demo",
+                version: "1.0.0",
+                background: "background.js",
+                commands: commands
+            )
+        )
+        return ExtensionStore.TopbarItemBinding(
+            muxyExtension: muxyExtension,
+            item: ExtensionTopbarItem(id: command, icon: .symbol("a"), tooltip: nil, command: command),
+            liveIcon: nil,
+            liveVisible: nil
+        )
     }
 
     private func binding(_ item: ExtensionStatusBarItem, liveVisible: Bool?) -> ExtensionStore.StatusBarItemBinding {

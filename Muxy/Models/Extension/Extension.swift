@@ -477,6 +477,13 @@ enum ExtensionCommandAction: Codable, Equatable {
         return false
     }
 
+    var isRailEligible: Bool {
+        if case .togglePanel = self {
+            return true
+        }
+        return false
+    }
+
     var requiredPermission: ExtensionPermission? {
         switch self {
         case .event:

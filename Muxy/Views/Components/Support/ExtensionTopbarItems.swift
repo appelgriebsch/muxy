@@ -2,9 +2,16 @@ import SwiftUI
 
 struct ExtensionTopbarItems: View {
     @Environment(ExtensionStore.self) private var extensionStore
+    @AppStorage(TopbarPreferences.railVisibleKey)
+    private var showExtensionIconRail = TopbarPreferences.defaultRailVisible
 
     var body: some View {
-        ForEach(extensionStore.topbarItems) { binding in
+        ForEach(
+            ExtensionTopbarPlacement.titleBarItems(
+                from: extensionStore.topbarItems,
+                railEnabled: showExtensionIconRail
+            )
+        ) { binding in
             ExtensionTopbarItemControl(binding: binding, preferredEdge: .maxY)
         }
     }

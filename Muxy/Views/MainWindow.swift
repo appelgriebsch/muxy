@@ -746,9 +746,7 @@ struct MainWindow: View {
             if let project = activeProject {
                 LayoutPickerMenu(projectID: project.id)
             }
-            if !showExtensionIconRail {
-                ExtensionTopbarItems()
-            }
+            ExtensionTopbarItems()
             if let project = activeProject,
                let key = appState.activeWorktreeKey(for: project.id),
                let focusedAreaID = appState.focusedAreaID[key]
@@ -1245,7 +1243,7 @@ struct MainWindow: View {
     }
 
     private var showsExtensionTopbarRail: Bool {
-        showExtensionIconRail && !extensionStore.topbarItems.isEmpty
+        showExtensionIconRail && !ExtensionTopbarPlacement.railItems(from: extensionStore.topbarItems).isEmpty
     }
 
     private var extensionTopbarRailColumn: some View {

@@ -8,9 +8,17 @@ struct ExtensionTopbarRail: View {
     @State private var frames: [String: CGRect] = [:]
     @GestureState private var isDragging = false
 
+    private var railItems: [ExtensionStore.TopbarItemBinding] {
+        ExtensionTopbarPlacement.railItems(from: extensionStore.topbarItems)
+    }
+
+    private var visibleNonRailIDs: [String] {
+        extensionStore.topbarItems.filter { !$0.isRailEligible }.map(\.id)
+    }
+
     private var displayedItems: [ExtensionStore.TopbarItemBinding] {
         ExtensionTopbarRailOrder.displayed(
-            visible: extensionStore.topbarItems,
+            visible: railItems,
             savedIDs: liveOrderIDs ?? orderStore.ids
         )
     }
@@ -106,8 +114,9 @@ struct ExtensionTopbarRail: View {
     }
 
     private func persistFirstSeenIDs() {
-        orderStore.ids = ExtensionTopbarRailOrder.appendingNewIDs(
-            visibleIDs: extensionStore.topbarItems.map(\.id),
+        orderStore.ids = ExtensionTopbarRailOrder.persisting(
+            visibleRailIDs: railItems.map(\.id),
+            visibleNonRailIDs: visibleNonRailIDs,
             savedIDs: orderStore.ids
         )
     }
@@ -115,7 +124,11 @@ struct ExtensionTopbarRail: View {
     private func persistLiveOrder() {
         guard liveOrderIDs != nil else { return }
         let liveIDs = displayedItems.map(\.id)
-        orderStore.ids = ExtensionTopbarRailOrder.applyingLiveOrder(liveIDs, to: orderStore.ids)
+        orderStore.ids = ExtensionTopbarRailOrder.persisting(
+            visibleRailIDs: railItems.map(\.id),
+            visibleNonRailIDs: visibleNonRailIDs,
+            savedIDs: ExtensionTopbarRailOrder.applyingLiveOrder(liveIDs, to: orderStore.ids)
+        )
     }
 
     private func finishDrag() {

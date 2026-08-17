@@ -173,6 +173,11 @@ struct SettingsCatalogTests {
         #expect(SettingsCatalog.matchingItems(query: "right rail").contains {
             $0.key == TopbarPreferences.railVisibleKey
         })
+        #expect(SettingsCatalog.matchingItems(query: "toggle panel").contains {
+            $0.key == TopbarPreferences.railVisibleKey
+        })
+        #expect(visible?.description.contains("togglePanel") == true)
+        #expect(order?.description.contains("togglePanel") == true)
         #expect(SettingsCatalog.jsonEditableItems.contains { $0.key == TopbarPreferences.railVisibleKey })
         #expect(SettingsCatalog.jsonEditableItems.contains { $0.key == TopbarPreferences.railOrderKey })
     }

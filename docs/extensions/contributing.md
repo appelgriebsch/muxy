@@ -44,7 +44,7 @@ In Muxy, open the **Extensions** modal → **Create**, set the **location** to t
 `extensions/` folder inside your checkout, and name it `my-extension`. Muxy copies
 the [`vanilla`](https://github.com/muxy-app/muxy/tree/main/Muxy/Resources/starter-kits/vanilla)
 starter kit (a minimal npm + [Vite](https://vitejs.dev) project with one panel, a
-command icon in the title bar or optional right rail, and a command, themed against the app's `--muxy-*` tokens) into
+panel-toggle command icon that may sit in the title bar or on the optional right rail, and a command, themed against the app's `--muxy-*` tokens) into
 `extensions/my-extension/` and loads it as a dev extension automatically.
 
 The directory name **must** equal the package `name`. For a full-featured

@@ -14,7 +14,7 @@ drive the same verbs the `muxy` CLI exposes.
 1. In Muxy, open the **Extensions** modal → **Create**, pick a folder, and name
    it `my-extension`. Muxy scaffolds the
    [`vanilla`](https://github.com/muxy-app/muxy/tree/main/Muxy/Resources/starter-kits/vanilla)
-   starter kit (a Hello panel, a command icon in the title bar or optional right rail, and a command) and loads it as a
+   starter kit (a Hello panel, a panel-toggle command icon that may sit in the title bar or on the optional right rail, and a command) and loads it as a
    dev extension automatically.
 2. Build it so Muxy has a `dist/` to read:
 
@@ -28,7 +28,7 @@ drive the same verbs the `muxy` CLI exposes.
    the built `dist/` folder, so run `npm run build` (and **Reload**) to see
    changes in the app.
 3. Click **Reload** in the Extensions modal, then press **⌘⇧H** (or use the
-   sparkles icon in the title bar or the right-hand extension rail, if enabled).
+   sparkles icon in the title bar, or on the right-hand extension rail if **Show Extension Icon Rail** is on — this starter icon is a panel toggle, so it may sit on the rail).
    The **Hello** panel toggles — that's your extension running.
 
 Dev extensions show a **DEV** badge. Edit the source, then **Reload** to see
