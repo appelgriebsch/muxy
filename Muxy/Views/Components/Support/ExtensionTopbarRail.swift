@@ -30,7 +30,6 @@ struct ExtensionTopbarRail: View {
                 ForEach(items) { binding in
                     ExtensionTopbarItemControl(
                         binding: binding,
-                        preferredEdge: .minX,
                         isCommandEnabled: draggedID == nil,
                         showsSelectionChrome: true
                     )
