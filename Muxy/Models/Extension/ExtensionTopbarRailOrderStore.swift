@@ -15,6 +15,16 @@ final class ExtensionTopbarRailOrderStore {
         }
     }
 
+    func reconcile(visibleRailIDs: [String], visibleNonRailIDs: [String]) {
+        let reconciled = ExtensionTopbarRailOrder.persisting(
+            visibleRailIDs: visibleRailIDs,
+            visibleNonRailIDs: visibleNonRailIDs,
+            savedIDs: ids
+        )
+        guard reconciled != ids else { return }
+        ids = reconciled
+    }
+
     init(
         defaults: UserDefaults = .standard,
         key: String = TopbarPreferences.railOrderKey

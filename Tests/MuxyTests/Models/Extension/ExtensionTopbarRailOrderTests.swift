@@ -298,6 +298,20 @@ struct ExtensionTopbarRailOrderStoreTests {
         #expect(defaults.stringArray(forKey: TopbarPreferences.railOrderKey) == ["ext:a", "ext:b"])
     }
 
+    @Test("removes the last visible item after it stops being rail eligible")
+    func reconcileRemovesLastVisibleNonRailItem() throws {
+        let suiteName = "muxy.tests.rail-order-reconcile.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(["ext:item"], forKey: TopbarPreferences.railOrderKey)
+        let store = ExtensionTopbarRailOrderStore(defaults: defaults)
+
+        store.reconcile(visibleRailIDs: [], visibleNonRailIDs: ["ext:item"])
+
+        #expect(store.ids.isEmpty)
+        #expect(defaults.stringArray(forKey: TopbarPreferences.railOrderKey)?.isEmpty == true)
+    }
+
     @Test("reloads when UserDefaults change")
     func reloadsOnDefaultsChange() async throws {
         let suiteName = "muxy.tests.rail-order-reload.\(UUID().uuidString)"

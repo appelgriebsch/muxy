@@ -54,15 +54,13 @@ struct ExtensionTopbarRail: View {
         }
         .coordinateSpace(name: "extension-icon-rail")
         .scrollDisabled(draggedID != nil)
-        .onAppear(perform: persistFirstSeenIDs)
         .onDisappear(perform: finishDrag)
         .onChange(of: isDragging) { _, dragging in
             guard !dragging else { return }
             finishDrag()
         }
-        .onChange(of: extensionStore.topbarItems) { _, items in
-            persistFirstSeenIDs()
-            guard let draggedID, !items.contains(where: { $0.id == draggedID }) else { return }
+        .onChange(of: extensionStore.topbarItems) {
+            guard let draggedID, !railItems.contains(where: { $0.id == draggedID }) else { return }
             finishDrag()
         }
     }
@@ -110,14 +108,6 @@ struct ExtensionTopbarRail: View {
         displayedItems.map(\.id).first { id in
             frames[id]?.contains(point) == true
         }
-    }
-
-    private func persistFirstSeenIDs() {
-        orderStore.ids = ExtensionTopbarRailOrder.persisting(
-            visibleRailIDs: railItems.map(\.id),
-            visibleNonRailIDs: visibleNonRailIDs,
-            savedIDs: orderStore.ids
-        )
     }
 
     private func persistLiveOrder() {

@@ -158,6 +158,7 @@ struct MainWindow: View {
     @AppStorage("muxy.sidebarExpanded") private var sidebarExpanded = false
     @State private var layoutStore = AppLayoutStore.shared
     @State private var extensionStore = ExtensionStore.shared
+    @State private var extensionTopbarRailOrderStore = ExtensionTopbarRailOrderStore.shared
     @AppStorage(SidebarSelection.storageKey) private var activeSidebarRaw = SidebarSelection.builtinValue
     @AppStorage(TopbarPreferences.actionsVisibleKey)
     private var showTopbarActions = TopbarPreferences.defaultActionsVisible
@@ -191,6 +192,10 @@ struct MainWindow: View {
             .modifier(windowOverlays)
             .modifier(windowChrome)
             .modifier(windowEventListeners)
+            .onAppear(perform: reconcileExtensionTopbarRailOrder)
+            .onChange(of: extensionStore.topbarItems) {
+                reconcileExtensionTopbarRailOrder()
+            }
             .onChange(of: richInputPresentationMode) { _, mode in
                 synchronizeRichInputPresentationMode(mode)
             }
@@ -1243,6 +1248,14 @@ struct MainWindow: View {
         case .bottomCenter: .bottom
         case .bottomRight: .bottomTrailing
         }
+    }
+
+    private func reconcileExtensionTopbarRailOrder() {
+        let items = extensionStore.topbarItems
+        extensionTopbarRailOrderStore.reconcile(
+            visibleRailIDs: items.filter(\.isRailEligible).map(\.id),
+            visibleNonRailIDs: items.filter { !$0.isRailEligible }.map(\.id)
+        )
     }
 
     private var showsExtensionTopbarRail: Bool {
