@@ -1,6 +1,6 @@
 # Extension Panels
 
-A panel is a webview that docks beside the workspace or floats over it, alongside Muxy's extension console. Each panel is its own `WKWebView` with the injected [`window.muxy`](tabs.md#windowmuxy) bridge, just like a [tab](tabs.md) — it simply occupies a docked or floating slot instead of a tab.
+A panel is a webview that docks beside the workspace or floats over it, alongside Muxy's extension console. Each panel is its own `WKWebView` with the injected [`window.muxy`](tabs.md#windowmuxy) bridge, just like a [tab](tabs.md) — it simply occupies a docked or floating slot instead of a tab. A right panel still docks or floats under the title bar, to the left of the optional extension icon rail.
 
 Every panel, built-in or extension, follows the same placement rules per position (`right` or `bottom`):
 
