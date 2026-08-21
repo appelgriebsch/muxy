@@ -420,7 +420,7 @@ enum SettingsCatalog {
         SettingsCatalogItem(
             key: TopbarPreferences.railVisibleKey,
             title: "Show Extension Icon Rail",
-            description: "Shows visible togglePanel extension icons in a right-hand rail. "
+            description: "Shows visible togglePanel extension icons in a right-hand rail below the title bar. "
                 + "Other topbar icons stay in the title bar. Off by default.",
             category: .appearance,
             section: "Interface",

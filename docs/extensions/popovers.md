@@ -23,7 +23,7 @@ At most **one extension popover is open at a time** — opening another anchor's
 }
 ```
 
-A popover is always reached through a topbar/status bar item whose `command` resolves to an `openPopover` action, and it anchors to that exact item. Title-bar popovers open below the item; status-bar popovers stay footer-anchored. There is no `open` verb — popovers are user-triggered, and the background script does not drive them.
+A popover is always reached through a topbar/status bar item whose `command` resolves to an `openPopover` action, and it anchors to that exact item. Title-bar popovers open below the item; status-bar popovers stay footer-anchored. Rail icons are `togglePanel` only and are not popover anchors. There is no `open` verb — popovers are user-triggered, and the background script does not drive them.
 
 ### Fields
 

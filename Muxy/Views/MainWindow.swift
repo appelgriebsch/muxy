@@ -217,9 +217,6 @@ struct MainWindow: View {
         HStack(spacing: 0) {
             sidebarColumn
             mainWorkspaceColumn
-            if showsExtensionTopbarRail {
-                extensionTopbarRailColumn
-            }
         }
         .animation(.easeInOut(duration: 0.2), value: sidebarExpanded)
         .animation(.easeInOut(duration: 0.2), value: layoutStore.layout)
@@ -509,7 +506,13 @@ struct MainWindow: View {
             Rectangle().fill(MuxyTheme.border).frame(height: 1)
                 .background(AppTransparencyBackground())
 
-            workspaceContent
+            HStack(spacing: 0) {
+                workspaceContent
+                if showsExtensionTopbarRail {
+                    extensionTopbarRailColumn
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -1247,33 +1250,17 @@ struct MainWindow: View {
     }
 
     private var extensionTopbarRailColumn: some View {
-        VStack(spacing: 0) {
-            if !isFullScreen {
-                Color.clear
-                    .frame(height: UIMetrics.titleBarHeight)
-                    .background(WindowDragRepresentable())
-                    .background(MuxyTheme.bg)
-            }
-            VStack(spacing: 0) {
-                if !isFullScreen {
-                    Color.clear
-                        .frame(height: 1)
-                        .accessibilityHidden(true)
-                }
-                ExtensionTopbarRail()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+        ExtensionTopbarRail()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(width: UIMetrics.extensionIconRailWidth)
-        .clipped()
-        .background(MuxyTheme.bg)
-        .overlay(alignment: .leading) {
-            Rectangle().fill(MuxyTheme.border)
-                .frame(width: 1)
-                .accessibilityHidden(true)
-        }
-        .fixedSize(horizontal: true, vertical: false)
+            .frame(width: UIMetrics.extensionIconRailWidth)
+            .clipped()
+            .background(MuxyTheme.bg)
+            .overlay(alignment: .leading) {
+                Rectangle().fill(MuxyTheme.border)
+                    .frame(width: 1)
+                    .accessibilityHidden(true)
+            }
+            .fixedSize(horizontal: true, vertical: false)
     }
 
     private var toastEdgePadding: EdgeInsets {

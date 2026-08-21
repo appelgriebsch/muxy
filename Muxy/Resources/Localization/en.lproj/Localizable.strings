@@ -1448,7 +1448,7 @@
 "Shows app and subprocess CPU and memory usage in the status bar. Disabling it stops the sampling." = "Shows app and subprocess CPU and memory usage in the status bar. Disabling it stops the sampling.";
 "Shows or hides the status bar." = "Shows or hides the status bar.";
 "Shows or hides the window-level controls on the right side of the top bar." = "Shows or hides the window-level controls on the right side of the top bar.";
-"Shows visible togglePanel extension icons in a right-hand rail. Other topbar icons stay in the title bar. Off by default." = "Shows visible togglePanel extension icons in a right-hand rail. Other topbar icons stay in the title bar. Off by default.";
+"Shows visible togglePanel extension icons in a right-hand rail below the title bar. Other topbar icons stay in the title bar. Off by default." = "Shows visible togglePanel extension icons in a right-hand rail below the title bar. Other topbar icons stay in the title bar. Off by default.";
 "Saved order of visible togglePanel icons on the right-hand rail." = "Saved order of visible togglePanel icons on the right-hand rail.";
 "Shows the project search field whenever the project-focused sidebar is expanded." = "Shows the project search field whenever the project-focused sidebar is expanded.";
 "Shows the QR code used to pair a mobile device." = "Shows the QR code used to pair a mobile device.";

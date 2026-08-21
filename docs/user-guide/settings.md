@@ -68,10 +68,12 @@ as `muxy.showTopBarActions` in `settings.json` and defaults to on.
 ## Extension icon rail
 
 Turn on **Settings → Interface → Interface → Show Extension Icon Rail** to show visible `togglePanel` extension
-topbar icons in a right-hand rail. Popover and other command icons stay in the title bar. Off by default. The rail
-hides when no panel-toggle items are visible. The rail is independent of **Show Top Bar Actions**
-(`muxy.showTopBarActions`). The preference is stored as `muxy.showExtensionIconRail` in `settings.json`. Rail icon
-order is stored as `muxy.extensionIconRailOrder` and contains rail IDs only.
+topbar icons in a right-hand rail. The title bar spans the remaining window width after the left sidebar; the rail
+starts below the title-bar hairline and runs to the window bottom beside the status bar. Popover and other command
+icons stay in the title bar. Off by default. The rail hides when no panel-toggle items are visible. The rail is
+independent of **Show Top Bar Actions** (`muxy.showTopBarActions`). The preference is stored as
+`muxy.showExtensionIconRail` in `settings.json`. Rail icon order is stored as `muxy.extensionIconRailOrder` and
+contains rail IDs only.
 
 ## Project search
 
