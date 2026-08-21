@@ -1254,7 +1254,7 @@ struct MainWindow: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .frame(width: UIMetrics.extensionIconRailWidth)
             .clipped()
-            .background(MuxyTheme.bg)
+            .background(AppTransparencyBackground())
             .overlay(alignment: .leading) {
                 Rectangle().fill(MuxyTheme.border)
                     .frame(width: 1)
